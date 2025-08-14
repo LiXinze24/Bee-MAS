@@ -56,6 +56,10 @@ class TaskBoard:
     
     def get_pending_tasks(self) -> List[TaskAnnouncement]:
         """获取所有待分配的任务"""
+        return [data["task"] for data in self.pending_tasks.values() if data["task"].task_status == "PENDING"]
+    
+    def get_all_tasks(self) -> List[TaskAnnouncement]:
+        """获取所有任务（包括已分配的）"""
         return [data["task"] for data in self.pending_tasks.values()]
     
     def assign_task(self, task_id: str, agent_name: str) -> bool:
@@ -650,13 +654,16 @@ class SchedulerBee:
     
     def get_system_status(self) -> str:
         """获取系统状态概览"""
+        all_tasks = self.task_board.get_all_tasks()
         pending_tasks = self.task_board.get_pending_tasks()
+        assigned_tasks = [t for t in all_tasks if t.task_status == "ASSIGNED"]
         ready_tasks = self.task_dag.get_ready_tasks()
         
         status = f"""
 === 调度蜂系统状态 ===
 总任务数: {len(self.task_dag.tasks)}
 待分配任务: {len(pending_tasks)}
+已分配任务: {len(assigned_tasks)}
 可执行任务: {len(ready_tasks)}
 已完成任务: {len(self.task_board.completed_tasks)}
 注册的智能工蜂: {len(self.agents)}
@@ -731,7 +738,8 @@ class SchedulerBee:
         
         # 5. 显示最终状态
         print("\n📊 最终系统状态:")
-        print(self.get_system_status())
+        final_status = self.get_system_status()
+        print(final_status)
     
     def trigger_intelligent_bidding(self):
         """触发智能工蜂的自动竞标"""
