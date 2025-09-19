@@ -1,0 +1,88 @@
+============================================================
+Bee-MAS验证蜂输入输出示例
+============================================================
+
+本文档展示了Bee-MAS系统中验证蜂的输入和输出格式示例，
+
+============================================================
+1. 验证蜂输入示例
+{
+  "task_id": "TASK-VERIFY-001",
+  "task_name": "齿轮设计验证",
+  "description": "验证齿轮设计的合理性和装配可行性",
+  "inputs": {
+    "task_type": "设计验证",
+    "upstream_task_id": "TASK-C76",
+    "upstream_assembly": {
+      "assembly_type": "齿轮传动系统",
+      "components": ["齿轮", "轴", "轴承"],
+      "assembly_file": "assembly_TASK-C76.scad",
+      "total_parts": 3,
+      "assembly_complexity": "中等",
+      "estimated_weight": "2.5kg",
+      "manufacturing_method": "机加工 + 装配",
+      "assembly_script": "use <gear.scad>...",
+      "component_files": ["gear.scad", "shaft.scad", "bearing.scad"]
+    }
+  },
+  "deliverable": "验证报告",
+  "deadline": "3 minutes",
+  "created_by": "调度蜂",
+  "task_status": "ASSIGNED"
+}
+
+============================================================
+2. 验证蜂输出示例
+============================================================
+
+{
+  "task_id": "TASK-VERIFY-001",
+  "agent_name": "验证蜂",
+  "execution_time": "2025-9-19T10:35:22.789012",
+  "result_type": "设计验证结果",
+  "summary": "设计验证完成，验证了 4 个检查项",
+  "verification_report": "verification_report_TASK-VERIFY-001.txt",
+  "verification_result": {
+    "overall_status": "警告",
+    "checks": [
+      {
+        "check_item": "零件数量合理性",
+        "status": "通过",
+        "description": "检查装配体包含 3 个零件的合理性",
+        "issues": [],
+        "recommendations": []
+      },
+      {
+        "check_item": "制造可行性",
+        "status": "通过",
+        "description": "评估制造方法 '机加工 + 装配' 的可行性",
+        "issues": [],
+        "recommendations": []
+      },
+      {
+        "check_item": "装配可行性",
+        "status": "警告",
+        "description": "评估装配复杂度 '中等' 的可行性",
+        "issues": ["装配复杂度中等，需要详细装配说明"],
+        "recommendations": ["提供装配图纸"]
+      },
+      {
+        "check_item": "质量风险评估",
+        "status": "警告",
+        "description": "评估设计质量风险，识别风险因素: 装配复杂",
+        "issues": ["装配复杂"],
+        "recommendations": ["加强质量控制", "详细测试验证"]
+      }
+    ],
+    "summary": "验证完成，整体状态: 警告，共检查 4 项",
+    "risk_level": "中",
+    "next_steps": [
+      "根据验证结果优化设计",
+      "制作详细装配说明",
+      "进行原型验证测试"
+    ]
+  },
+  "overall_status": "警告",
+  "is_fallback": false
+}
+
