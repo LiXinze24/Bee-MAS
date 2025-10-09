@@ -23,12 +23,12 @@ class ModelingBee(SmartBeeAgent):
             task_board=task_board
         )
         # Dify 必选配置（通过环境变量）
-        self.dify_api_url: Optional[str] = os.getenv("DIFY_API_URL")
-        self.dify_api_key: Optional[str] = os.getenv("DIFY_API_KEY")
+        self.dify_api_url: Optional[str] = os.getenv("DIFY_MODELING_API_URL", os.getenv("DIFY_API_URL"))
+        self.dify_api_key: Optional[str] = os.getenv("DIFY_MODELING_API_KEY", os.getenv("DIFY_API_KEY"))
         # 可选：应用/工作流ID，不同部署可能字段不同，统称
-        self.dify_app_id: Optional[str] = os.getenv("DIFY_APP_ID") or os.getenv("DIFY_WORKFLOW_ID")
+        self.dify_app_id: Optional[str] = os.getenv("DIFY_MODELING_APP_ID") or os.getenv("DIFY_MODELING_WORKFLOW_ID")
         # 可选：返回结果路径（点号分隔），默认 data.outputs.result
-        self.dify_result_path: str = os.getenv("DIFY_RESULT_PATH", "data.outputs.result")
+        self.dify_result_path: str = os.getenv("DIFY_MODELING_RESULT_PATH", "data.outputs.result")
         self.output_dir = os.path.join(os.getcwd(), "outputs")
         os.makedirs(self.output_dir, exist_ok=True)
     
