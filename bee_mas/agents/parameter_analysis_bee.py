@@ -20,8 +20,7 @@ class ParameterAnalysisBee(SmartBeeAgent):
         super().__init__(
             name="工况分析蜂",
             capabilities=["参数计算", "需求分析", "工程计算"],
-            task_board=task_board,
-            llm_client=llm_client
+            task_board=task_board
         )
         # Dify 必选配置（通过环境变量）
         self.dify_api_url: Optional[str] = os.getenv("DIFY_API_URL")
@@ -111,10 +110,11 @@ class ParameterAnalysisBee(SmartBeeAgent):
             "Authorization": f"Bearer {self.dify_api_key}",
             "Content-Type": "application/json"
         }
-        payload: dict[str, any] = {
+        payload: Dict[str, Any] = {
             "inputs": {
                 "requirements": task.inputs.get('requirements', ''),
                 "task_type": task.inputs.get('task_type', ''),
+                "query": task.inputs.get('requirements', ''),  # 使用requirements作为query字段
             },
             "user": "bee-mas-system"  # dify api必需的user参数
         }

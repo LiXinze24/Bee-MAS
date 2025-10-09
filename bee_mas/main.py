@@ -6,6 +6,8 @@ import time
 import json
 import requests
 import math # Added for math.radians
+import os # Added for os.getenv
+import agents
 
 class DanceMessage(BaseModel):
     """舞蹈消息 - 用于Agent之间的通信"""
@@ -44,6 +46,7 @@ class TaskBoard:
         self.pending_tasks: Dict[str, Dict] = {}
         self.completed_tasks: Dict[str, TaskAnnouncement] = {}
         self.messages: List[DanceMessage] = []  # 存储所有消息
+        self.scheduler_bee = None  # 对调度蜂的引用
     
     def post_task(self, task: TaskAnnouncement) -> str:
         """发布新任务到公告板"""
@@ -179,249 +182,7 @@ class TaskDAG:
                 dependent_tasks.append(task)
         return dependent_tasks
 
-class LLMClient:
-    """LLM API客户端 - 支持多种LLM服务"""
-    
-    def __init__(self, api_type: str = "deepseek", api_key: str = None, base_url: str = None):
-        self.api_type = api_type
-        self.api_key = api_key or "sk-1e54707380d7482ab298e7f566f28808"
-        self.base_url = base_url or "https://api.deepseek.com/v1"
-        
-    def generate_response(self, prompt: str, system_message: str = None) -> str:
-        """生成LLM响应"""
-        try:
-            if self.api_type == "deepseek":
-                return self._call_deepseek(prompt, system_message)
-            else:
-                # 模拟LLM响应（用于测试）
-                return self._simulate_llm_response(prompt, system_message)
-        except Exception as e:
-            print(f"⚠️ LLM API调用失败: {e}")
-            return self._simulate_llm_response(prompt, system_message)
-    
-    def _call_deepseek(self, prompt: str, system_message: str = None) -> str:
-        """调用DeepSeek API"""
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
-        }
-        
-        messages = []
-        if system_message:
-            messages.append({"role": "system", "content": system_message})
-        messages.append({"role": "user", "content": prompt})
-        
-        data = {
-            "model": "deepseek-chat",
-            "messages": messages,
-            "temperature": 0.1,
-            "max_tokens": 1000
-        }
-        
-        response = requests.post(f"{self.base_url}/chat/completions", 
-                               headers=headers, json=data, timeout=30)
-        
-        if response.status_code == 200:
-            result = response.json()
-            return result["choices"][0]["message"]["content"]
-        else:
-            raise Exception(f"API调用失败: {response.status_code} - {response.text}")
-    
-    def _simulate_llm_response(self, prompt: str, system_message: str = None) -> str:
-        """模拟LLM响应（用于测试）"""
-        # 基于提示词的关键词匹配，生成合理的响应
-        if "任务分析" in prompt or "分析任务" in prompt:
-            return '''{
-                "suitable": true,
-                "confidence": "高",
-                "reasoning": "基于我的专业能力分析，我完全适合执行此任务",
-                "estimated_time": "15分钟",
-                "execution_plan": "采用标准流程：1)需求分析 2)参数计算 3)结果验证",
-                "risks": "无明显风险"
-            }'''
-        elif "执行计划" in prompt or "计划" in prompt:
-            return '''{
-                "suitable": true,
-                "confidence": "高",
-                "estimated_time": "15-20分钟",
-                "execution_plan": "我的执行计划包括：1) 需求分析 2) 方案设计 3) 实施执行 4) 质量验证"
-            }'''
-        elif "置信度" in prompt:
-            return '''{
-                "suitable": true,
-                "confidence": "高",
-                "reasoning": "基于任务复杂度和我的专业能力评估"
-            }'''
-        elif "参数分析" in prompt or "工程参数" in prompt:
-            return '''{
-                "parameters": {
-                    "模数": 2.0,
-                    "齿数": 20,
-                    "压力角": 20,
-                    "齿宽": 10,
-                    "孔径": 15
-                },
-                "units": {
-                    "长度": "mm",
-                    "角度": "度"
-                },
-                "constraints": [
-                    "使用标准规格",
-                    "考虑制造可行性"
-                ],
-                "assumptions": [
-                    "标准材料",
-                    "常规工艺"
-                ],
-                "recommendations": [
-                    "建议进行详细设计验证",
-                    "考虑成本优化"
-                ],
-                "summary": "基于需求生成的齿轮设计参数，符合工程标准"
-            }'''
-        elif "OpenSCAD" in prompt or "3D建模" in prompt or "齿轮" in prompt:
-            # 为三维建模蜂生成OpenSCAD代码
-            return '''// 齿轮3D模型 - LLM自动生成
-// 参数: 模数=2.0mm, 齿数=20, 压力角=20°, 齿宽=10mm, 孔径=15mm
 
-// 齿轮参数
-m = 2.0;           // 模数
-z = 20;            // 齿数
-alpha = 20;        // 压力角
-b = 10;            // 齿宽
-d_hole = 15;       // 孔径
-
-// 计算几何参数
-d = m * z;         // 分度圆直径
-da = d + 2 * m;   // 齿顶圆直径
-df = d - 2.5 * m; // 齿根圆直径
-p = m * PI;        // 齿距
-
-// 生成齿轮
-gear();
-
-module gear() {
-    difference() {
-        // 齿轮主体
-        cylinder(h=b, d=da, $fn=100);
-        
-        // 中心孔
-        cylinder(h=b+1, d=d_hole, $fn=50);
-        
-        // 齿槽
-        for (i = [0:z-1]) {
-            rotate([0, 0, i * 360/z])
-            translate([d/2, 0, 0])
-            tooth_space();
-        }
-    }
-}
-
-module tooth_space() {
-    // 精确的齿槽形状
-    translate([0, 0, -1])
-    linear_extrude(height=b+2)
-    polygon([
-        [0, 0],
-        [m/2, -m/4],
-        [m, 0],
-        [m/2, m/4]
-    ]);
-}
-
-// 辅助函数
-function PI() = 3.14159;'''
-        elif "装配" in prompt or "assembly" in prompt or "组合" in prompt:
-            # 为装配蜂生成装配脚本
-            return '''// 主装配脚本 - LLM自动生成
-// 包含零件: gear.scad, shaft.scad, bearing.scad
-
-// 引入零件模块
-use <gear.scad>
-use <shaft.scad>
-use <bearing.scad>
-
-// 主装配体
-assembly();
-
-module assembly() {
-    // 放置齿轮
-    translate([0, 0, 0])
-    gear();
-    
-    // 放置轴（穿过齿轮中心）
-    translate([0, 0, -25])
-    shaft();
-    
-    // 放置轴承（支撑轴）
-    translate([0, 0, -40])
-    bearing();
-    
-    // 装配说明
-    echo("装配体包含 3 个零件");
-    echo("零件列表: gear.scad, shaft.scad, bearing.scad");
-}
-
-// 辅助函数：显示坐标轴
-module show_axes() {
-    color("red") cylinder(h=100, d=1);  // X轴
-    color("green") rotate([0, 0, 90]) cylinder(h=100, d=1);  // Y轴
-    color("blue") rotate([0, -90, 0]) cylinder(h=100, d=1);  // Z轴
-}
-
-// 可选：显示坐标轴（调试用）
-// show_axes();'''
-        elif "验证" in prompt or "verification" in prompt or "检查" in prompt:
-            # 为验证蜂生成验证结果
-            return '''{
-                "overall_status": "通过",
-                "checks": [
-                    {
-                        "check_item": "零件数量合理性",
-                        "status": "通过",
-                        "description": "检查装配体包含 3 个零件的合理性",
-                        "issues": [],
-                        "recommendations": []
-                    },
-                    {
-                        "check_item": "制造可行性",
-                        "status": "通过",
-                        "description": "评估制造方法 '机加工 + 装配' 的可行性",
-                        "issues": [],
-                        "recommendations": []
-                    },
-                    {
-                        "check_item": "装配可行性",
-                        "status": "警告",
-                        "description": "评估装配复杂度 '中等' 的可行性",
-                        "issues": ["装配复杂度中等，需要详细装配说明"],
-                        "recommendations": ["提供装配图纸", "制作装配视频"]
-                    },
-                    {
-                        "check_item": "质量风险评估",
-                        "status": "通过",
-                        "description": "评估设计质量风险，识别风险因素: 装配复杂",
-                        "issues": ["装配复杂"],
-                        "recommendations": ["加强质量控制", "详细测试验证"]
-                    }
-                ],
-                "summary": "验证完成，整体状态: 通过，共检查 4 项",
-                "risk_level": "中",
-                "next_steps": [
-                    "根据验证结果优化设计",
-                    "制作详细装配说明",
-                    "进行原型验证测试"
-                ]
-            }'''
-        else:
-            return '''{
-                "suitable": true,
-                "confidence": "中",
-                "reasoning": "我理解任务需求，有信心能够高质量地完成这项工作",
-                "estimated_time": "15分钟",
-                "execution_plan": "采用标准流程执行任务",
-                "risks": "无明显风险"
-            }'''
 
 class BeeAgent:
     """工蜂基类 - 所有工蜂的基础"""
@@ -469,17 +230,13 @@ class BeeAgent:
         )
         
         self.task_board.add_message(message)
-        # 注释掉打印语句避免重复打印
-        # print(f"💬 {self.name}: {content}")
         return message
 
 class SmartBeeAgent(BeeAgent):
-    """智能工蜂 - 集成LLM API的智能工蜂"""
+    """智能工蜂 - 简化版本，适合Dify API化"""
     
-    def __init__(self, name: str, capabilities: List[str], task_board: TaskBoard, 
-                 llm_client: LLMClient = None):
+    def __init__(self, name: str, capabilities: List[str], task_board: TaskBoard):
         super().__init__(name, capabilities, task_board)
-        self.llm_client = llm_client or LLMClient()
         self.task_history: List[str] = []  # 任务执行历史
         self.current_task: Optional[str] = None  # 当前执行的任务ID
     
@@ -498,6 +255,10 @@ class SmartBeeAgent(BeeAgent):
         print(f"   任务描述: {task.description}")
         print(f"   输入参数: {task.inputs}")
         
+        # 通知调度蜂任务开始执行
+        if hasattr(self.task_board, 'scheduler_bee'):
+            self.task_board.scheduler_bee.active_tasks[task_id] = self.name
+        
         try:
             # 根据任务类型执行相应的处理逻辑
             if "参数分析" in task.task_name or "需求分析" in task.task_name:
@@ -506,8 +267,6 @@ class SmartBeeAgent(BeeAgent):
                 result = self._execute_3d_modeling(task)
             elif "装配设计" in task.task_name:
                 result = self._execute_assembly_design(task)
-            elif "设计验证" in task.task_name:
-                result = self._execute_design_verification(task)
             else:
                 result = self._execute_generic_task(task)
             
@@ -517,12 +276,16 @@ class SmartBeeAgent(BeeAgent):
                 print(f"✅ {self.name} 完成任务: {task.task_name}")
                 
                 # 发送任务完成消息
-                self.send_intelligent_message(
+                self.send_message(
                     f"任务执行完成！生成结果：{result.get('summary', '无')}",
                     "任务完成",
                     "TASK_RESULT",
                     related_task_id=task_id
                 )
+                
+                # 从调度蜂的active_tasks中移除
+                if hasattr(self.task_board, 'scheduler_bee') and task_id in self.task_board.scheduler_bee.active_tasks:
+                    del self.task_board.scheduler_bee.active_tasks[task_id]
                 
                 # 清理当前任务
                 self.current_task = None
@@ -530,11 +293,21 @@ class SmartBeeAgent(BeeAgent):
             else:
                 print(f"❌ {self.name} 任务执行失败: {task.task_name}")
                 self.task_board.update_task_status(task_id, "FAILED")
+                
+                # 从调度蜂的active_tasks中移除
+                if hasattr(self.task_board, 'scheduler_bee') and task_id in self.task_board.scheduler_bee.active_tasks:
+                    del self.task_board.scheduler_bee.active_tasks[task_id]
+                
                 return False
                 
         except Exception as e:
             print(f"❌ {self.name} 任务执行异常: {e}")
             self.task_board.update_task_status(task_id, "FAILED")
+            
+            # 从调度蜂的active_tasks中移除
+            if hasattr(self.task_board, 'scheduler_bee') and task_id in self.task_board.scheduler_bee.active_tasks:
+                del self.task_board.scheduler_bee.active_tasks[task_id]
+            
             self.current_task = None
             return False
     
@@ -549,33 +322,32 @@ class SmartBeeAgent(BeeAgent):
     def _execute_parameter_analysis(self, task: TaskAnnouncement) -> Dict[str, Any]:
         """执行参数分析任务 - 工况分析蜂的核心功能"""
         # 导入工况分析蜂模块
-        from .agents.parameter_analysis_bee import ParameterAnalysisBee
-        bee = ParameterAnalysisBee(self.task_board, self.llm_client)
+        try:
+            from bee_mas.agents.parameter_analysis_bee import ParameterAnalysisBee
+        except ImportError:
+            from agents.parameter_analysis_bee import ParameterAnalysisBee
+        bee = ParameterAnalysisBee(self.task_board)
         return bee._execute_parameter_analysis(task)
-    
     
     def _execute_3d_modeling(self, task: TaskAnnouncement) -> Dict[str, Any]:
         """执行3D建模任务 - 三维建模蜂的核心功能"""
         # 导入三维建模蜂模块
-        from .agents.modeling_bee import ModelingBee
-        bee = ModelingBee(self.task_board, self.llm_client)
+        try:
+            from bee_mas.agents.modeling_bee import ModelingBee
+        except ImportError:
+            from agents.modeling_bee import ModelingBee
+        bee = ModelingBee(self.task_board)
         return bee._execute_3d_modeling(task)
-    
     
     def _execute_assembly_design(self, task: TaskAnnouncement) -> Dict[str, Any]:
         """执行装配设计任务 - 装配蜂的核心功能"""
         # 导入装配蜂模块
-        from .agents.assembly_bee import AssemblyBee
-        bee = AssemblyBee(self.task_board, self.llm_client)
+        try:
+            from bee_mas.agents.assembly_bee import AssemblyBee
+        except ImportError:
+            from agents.assembly_bee import AssemblyBee
+        bee = AssemblyBee(self.task_board)
         return bee._execute_assembly_design(task)
-    
-    
-    def _execute_design_verification(self, task: TaskAnnouncement) -> Dict[str, Any]:
-        """执行设计验证任务 - 验证蜂的核心功能"""
-        # 导入验证蜂模块
-        from .agents.verification_bee import VerificationBee
-        bee = VerificationBee(self.task_board, self.llm_client)
-        return bee._execute_design_verification(task)
     
     
     def _execute_generic_task(self, task: TaskAnnouncement) -> Dict[str, Any]:
@@ -605,6 +377,8 @@ class SmartBeeAgent(BeeAgent):
         print(f"\n🤖 {self.name} 开始处理分配的任务...")
         for task in assigned_tasks:
             print(f"   处理任务: {task.task_name} ({task.task_id})")
+            # 更新任务状态为IN_PROGRESS
+            self.task_board.update_task_status(task.task_id, "IN_PROGRESS")
             success = self.execute_task(task.task_id)
             if success:
                 print(f"   ✅ 任务 {task.task_name} 执行成功")
@@ -613,68 +387,7 @@ class SmartBeeAgent(BeeAgent):
             print()  # 空行分隔
     
     def analyze_task(self, task: TaskAnnouncement) -> Dict[str, Any]:
-        """智能分析任务，判断是否适合执行"""
-        system_message = f"""你是{self.name}，具备以下专业能力：{', '.join(self.capabilities)}。
-
-你的任务是分析给定的工程任务，判断是否适合由你来执行。
-
-请分析以下方面：
-1. 任务与你的专业能力的匹配度
-2. 任务的复杂度和风险
-3. 你的执行优势
-4. 预估完成时间
-
-请以JSON格式返回分析结果，包含：
-- "suitable": true/false (是否适合)
-- "confidence": "高"/"中"/"低" (执行置信度)
-- "reasoning": "分析理由"
-- "estimated_time": "预估时间"
-- "execution_plan": "执行计划"
-- "risks": "潜在风险" """
-
-        prompt = f"""请分析以下任务：
-
-任务名称：{task.task_name}
-任务描述：{task.description}
-输入参数：{task.inputs}
-交付物：{task.deliverable}
-截止时间：{task.deadline}
-
-请判断我是否适合执行这个任务，并给出详细分析。"""
-
-        try:
-            response = self.llm_client.generate_response(prompt, system_message)
-            print(f"   LLM响应: {response[:200]}...")  # 调试信息
-            
-            # 尝试解析JSON响应
-            if "{" in response and "}" in response:
-                start = response.find("{")
-                end = response.rfind("}") + 1
-                json_str = response[start:end]
-                
-                try:
-                    analysis = json.loads(json_str)
-                    # 验证必要字段
-                    required_fields = ["suitable", "confidence", "execution_plan", "estimated_time"]
-                    for field in required_fields:
-                        if field not in analysis:
-                            print(f"   ⚠️ 缺少字段: {field}")
-                            analysis[field] = self._get_default_value(field)
-                    
-                    return analysis
-                except json.JSONDecodeError as e:
-                    print(f"   ⚠️ JSON解析失败: {e}")
-                    return self._default_task_analysis(task)
-            else:
-                # 如果无法解析JSON，返回默认分析
-                print("   ⚠️ 响应中未找到JSON格式")
-                return self._default_task_analysis(task)
-        except Exception as e:
-            print(f"⚠️ 任务分析失败: {e}")
-            return self._default_task_analysis(task)
-    
-    def _default_task_analysis(self, task: TaskAnnouncement) -> Dict[str, Any]:
-        """默认任务分析（当LLM调用失败时使用）"""
+        """分析任务，判断是否适合执行"""
         # 基于关键词匹配的简单分析
         task_desc = task.description.lower()
         capabilities_str = " ".join(self.capabilities).lower()
@@ -697,20 +410,8 @@ class SmartBeeAgent(BeeAgent):
             "risks": "无明显风险"
         }
     
-    def _get_default_value(self, field: str) -> Any:
-        """获取字段的默认值"""
-        defaults = {
-            "suitable": True,
-            "confidence": "中",
-            "reasoning": "基于默认分析",
-            "estimated_time": "15分钟",
-            "execution_plan": "采用标准流程执行任务",
-            "risks": "无明显风险"
-        }
-        return defaults.get(field, "未知")
-    
-    def generate_intelligent_proposal(self, task: TaskAnnouncement) -> TaskProposal:
-        """生成智能提案"""
+    def generate_proposal(self, task: TaskAnnouncement) -> TaskProposal:
+        """生成提案"""
         # 分析任务
         analysis = self.analyze_task(task)
         
@@ -719,42 +420,21 @@ class SmartBeeAgent(BeeAgent):
             print(f"❌ {self.name} 认为不适合执行任务 {task.task_name}")
             return None
         
-        # 安全地获取字段值，确保类型正确
-        execution_plan = analysis.get("execution_plan", "采用标准流程执行任务")
-        confidence = analysis.get("confidence", "中")
-        estimated_time = analysis.get("estimated_time", "15分钟")
-        
-        # 类型检查和转换
-        if isinstance(execution_plan, list):
-            execution_plan = " ".join(execution_plan)
-        elif not isinstance(execution_plan, str):
-            execution_plan = str(execution_plan)
-        
-        if isinstance(confidence, list):
-            confidence = confidence[0] if confidence else "中"
-        elif not isinstance(confidence, str):
-            confidence = str(confidence)
-        
-        if isinstance(estimated_time, list):
-            estimated_time = estimated_time[0] if estimated_time else "15分钟"
-        elif not isinstance(estimated_time, str):
-            estimated_time = str(estimated_time)
-        
         # 生成提案
         proposal = TaskProposal(
             proposal_id=f"PROP-{str(uuid.uuid4())[:8].upper()}",
             task_id=task.task_id,
             agent_name=self.name,
             role_declaration=f"我是{self.name}，专业从事{', '.join(self.capabilities)}工作",
-            execution_plan=execution_plan,
-            confidence=confidence,
-            estimated_time=estimated_time,
+            execution_plan=analysis.get("execution_plan", "采用标准流程执行任务"),
+            confidence=analysis.get("confidence", "中"),
+            estimated_time=analysis.get("estimated_time", "15分钟"),
             timestamp=datetime.now().isoformat()
         )
         
         # 提交提案
         if self.task_board.submit_proposal(task.task_id, proposal):
-            print(f"✅ {self.name} 已提交智能提案: {proposal.proposal_id}")
+            print(f"✅ {self.name} 已提交提案: {proposal.proposal_id}")
             print(f"   置信度: {proposal.confidence}, 预估时间: {proposal.estimated_time}")
             return proposal
         else:
@@ -762,7 +442,7 @@ class SmartBeeAgent(BeeAgent):
             return None
     
     def auto_bid_on_tasks(self):
-        """自动竞标适合的任务"""
+        """自动竞标适合的任务（基于LLM API）"""
         available_tasks = self.view_tasks()
         if not available_tasks:
             return
@@ -775,412 +455,569 @@ class SmartBeeAgent(BeeAgent):
                 existing_proposals = self.task_board.get_task_proposals(task.task_id)
                 has_my_proposal = any(p.agent_name == self.name for p in existing_proposals)
                 
-                print(f"   任务 {task.task_name} 现有提案: {len(existing_proposals)} 个")
-                if existing_proposals:
-                    for p in existing_proposals:
-                        print(f"     - {p.agent_name}: {p.proposal_id}")
-                
                 if has_my_proposal:
                     print(f"   跳过任务: {task.task_name} (已有我的提案)")
                     continue
                 
                 print(f"   分析任务: {task.task_name}")
-                proposal = self.generate_intelligent_proposal(task)
+                proposal = self.generate_llm_proposal(task)
                 if proposal:
                     self.task_history.append(task.task_id)
                     print(f"   ✅ 已提交提案")
                 else:
                     print(f"   ❌ 不适合此任务")
     
-    def send_intelligent_message(self, content: str, stage: str, message_type: str = "TASK_UPDATE", 
-                               receiver: Optional[str] = None, related_task_id: Optional[str] = None):
-        """发送智能消息"""
-        # 直接使用原始内容，避免LLM优化产生额外信息
-        final_content = content
-        
-        return super().send_message(final_content, stage, message_type, receiver, related_task_id)
+    def generate_llm_proposal(self, task: TaskAnnouncement) -> Optional[TaskProposal]:
+        """基于LLM API生成任务提案"""
+        try:
+            # 构建系统提示词
+            system_prompt = f"""你是一个专业的{self.name}，负责分析任务并生成提案。
 
-class SchedulerBee:
-    """调度蜂 - 负责任务分解、分配和协调"""
+你的专业能力包括: {', '.join(self.capabilities)}
+
+请分析以下任务，判断你是否适合执行该任务。如果适合，请生成一个详细的提案。
+
+返回格式必须是有效的JSON，包含以下结构：
+{{
+    "suitable": true/false,
+    "confidence": "高/中/低",
+    "reasoning": "详细理由",
+    "estimated_time": "预估时间（分钟）",
+    "execution_plan": "详细执行计划",
+    "risks": "风险评估"
+}}
+
+如果你认为不适合执行该任务，请将suitable设为false，其他字段可以为空。"""
+
+            # 构建用户提示词
+            user_prompt = f"""请分析以下任务并生成提案：
+
+任务信息：
+- 任务名称: {task.task_name}
+- 任务描述: {task.description}
+- 期望交付物: {task.deliverable}
+- 完成时限: {task.deadline}
+
+输入参数: {task.inputs}
+
+请基于你的专业能力({', '.join(self.capabilities)})，分析你是否适合执行此任务，并提供详细的提案。"""
+            
+            # 调用DeepSeek API
+            deepseek_api_key = os.getenv("DEEPSEEK_API_KEY", "")
+            deepseek_model = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+            deepseek_api_url = os.getenv("DEEPSEEK_API_URL", "https://api.deepseek.com/v1/chat/completions")
+            
+            if not deepseek_api_key:
+                raise ValueError("未配置DEEPSEEK_API_KEY，无法使用LLM API生成提案")
+            
+            headers = {
+                "Authorization": f"Bearer {deepseek_api_key}",
+                "Content-Type": "application/json"
+            }
+            
+            data = {
+                "model": deepseek_model,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                "temperature": 0.3,
+                "max_tokens": 2000
+            }
+            
+            response = requests.post(deepseek_api_url, json=data, headers=headers, timeout=30)
+            response.raise_for_status()
+            result = response.json()
+            answer = result["choices"][0]["message"]["content"]
+            
+            # 解析响应
+            import re
+            json_match = re.search(r'\{.*\}', answer, re.DOTALL)
+            if json_match:
+                json_str = json_match.group(0)
+                proposal_data = json.loads(json_str)
+            else:
+                proposal_data = json.loads(answer)
+            
+            # 检查是否适合执行任务
+            if not proposal_data.get("suitable", False):
+                print(f"   ❌ {self.name} 认为不适合执行任务 {task.task_name}")
+                return None
+            
+            # 生成提案
+            proposal = TaskProposal(
+                proposal_id=f"PROP-{str(uuid.uuid4())[:8].upper()}",
+                task_id=task.task_id,
+                agent_name=self.name,
+                role_declaration=f"我是{self.name}，专业从事{', '.join(self.capabilities)}工作",
+                execution_plan=proposal_data.get("execution_plan", "采用标准流程执行任务"),
+                confidence=proposal_data.get("confidence", "中"),
+                estimated_time=f"{proposal_data.get('estimated_time', 15)}分钟",
+                timestamp=datetime.now().isoformat()
+            )
+            
+            # 提交提案
+            if self.task_board.submit_proposal(task.task_id, proposal):
+                print(f"   ✅ {self.name} 已提交提案: {proposal.proposal_id}")
+                print(f"   理由: {proposal_data.get('reasoning', '无')}")
+                print(f"   置信度: {proposal.confidence}, 预估时间: {proposal.estimated_time}")
+                return proposal
+            else:
+                print(f"   ❌ 提案提交失败")
+                return None
+                
+        except Exception as e:
+            print(f"   ❌ LLM提案生成失败: {e}")
+            raise
+
+class SchedulerBee(BeeAgent):
+    """调度蜂 - 负责任务分解、分配和监控（基于LLM API）"""
     
     def __init__(self, task_board: TaskBoard, task_dag: TaskDAG):
-        self.task_board = task_board
+        super().__init__("调度蜂", ["任务分解", "任务分配", "进度监控", "质量评估"], task_board)
         self.task_dag = task_dag
-        self.agents: Dict[str, SmartBeeAgent] = {}
-        self.agent_capabilities = {
-            "工况分析蜂": ["参数计算", "需求分析", "工程计算"],
-            "三维建模蜂": ["3D建模", "OpenSCAD", "几何设计"],
-            "装配蜂": ["装配设计", "空间定位", "干涉检查"],
-            "验证蜂": ["设计验证", "质量检查", "可行性分析"]
-        }
+        self.active_tasks: Dict[str, str] = {}  # task_id -> agent_name
+        self.task_queue: List[str] = []  # 任务队列
+        self.registered_agents: List[BeeAgent] = []  # 注册的智能工蜂列表
+        
+        # 设置TaskBoard对调度蜂的引用
+        task_board.scheduler_bee = self
+        
+        # DeepSeek API配置
+        self.deepseek_api_key = os.getenv("DEEPSEEK_API_KEY", "")
+        self.deepseek_model = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+        self.deepseek_api_url = os.getenv("DEEPSEEK_API_URL", "https://api.deepseek.com/v1/chat/completions")
     
-    def register_agent(self, agent: SmartBeeAgent):
-        """注册智能工蜂"""
-        self.agents[agent.name] = agent
+    def register_agent(self, agent: BeeAgent) -> bool:
+        """注册智能工蜂到调度蜂"""
+        if agent not in self.registered_agents:
+            self.registered_agents.append(agent)
+            print(f"✅ 已注册智能工蜂: {agent.name}")
+            return True
+        return False
     
-    def decompose_task(self, user_request: str) -> List[TaskAnnouncement]:
-        """使用思维链方法分解用户请求为子任务"""
-        # 简化的任务分解逻辑
-        if "齿轮" in user_request:
-            # 创建任务ID（提前创建以便设置依赖关系）
-            task_ids = [f"TASK-{str(uuid.uuid4())[:8].upper()}" for _ in range(4)]
-            
-            tasks = [
-                TaskAnnouncement(
-                    task_id=task_ids[0],
-                    task_name="齿轮参数分析",
-                    description="分析齿轮设计需求，计算模数、齿数、压力角等关键参数",
-                    inputs={"task_type": "齿轮设计", "requirements": user_request},
-                    deliverable="齿轮设计参数表",
-                    deadline="15 minutes",
-                    created_by="调度蜂",
-                    task_status="PENDING"
-                ),
-                TaskAnnouncement(
-                    task_id=task_ids[1],
-                    task_name="齿轮3D建模",
-                    description="根据参数生成OpenSCAD脚本，创建齿轮的3D模型",
-                    inputs={"task_type": "齿轮建模", "upstream_task_id": task_ids[0]},
-                    deliverable="齿轮OpenSCAD脚本",
-                    deadline="20 minutes",
-                    created_by="调度蜂",
-                    task_status="PENDING"
-                ),
-                TaskAnnouncement(
-                    task_id=task_ids[2],
-                    task_name="齿轮装配设计",
-                    description="设计齿轮的装配方案和安装说明",
-                    inputs={"task_type": "装配设计", "upstream_task_id": task_ids[1]},
-                    deliverable="装配脚本和说明",
-                    deadline="15 minutes",
-                    created_by="调度蜂",
-                    task_status="PENDING"
-                ),
-                TaskAnnouncement(
-                    task_id=task_ids[3],
-                    task_name="齿轮设计验证",
-                    description="验证齿轮设计的合理性和装配可行性",
-                    inputs={"task_type": "设计验证", "upstream_task_id": task_ids[2]},
-                    deliverable="验证报告",
-                    deadline="10 minutes",
-                    created_by="调度蜂",
-                    task_status="PENDING"
-                )
-            ]
-            
-            # 设置依赖关系
-            self.task_dag.add_task(tasks[0], [])  # 参数分析无依赖
-            self.task_dag.add_task(tasks[1], [tasks[0].task_id])  # 建模依赖参数分析
-            self.task_dag.add_task(tasks[2], [tasks[1].task_id])  # 装配依赖建模
-            self.task_dag.add_task(tasks[3], [tasks[2].task_id])  # 验证依赖装配
-            
-            return tasks
-        else:
-            # 通用任务分解
-            return [
-                TaskAnnouncement(
-                    task_id=f"TASK-{str(uuid.uuid4())[:8].upper()}",
-                    task_name="需求分析",
-                    description="分析用户需求，确定具体参数",
-                    inputs={"requirements": user_request},
-                    deliverable="需求分析报告",
-                    deadline="20 minutes",
-                    created_by="调度蜂",
-                    task_status="PENDING"
-                )
-            ]
-    
-    def publish_tasks(self, tasks: List[TaskAnnouncement]):
-        """发布任务到公告板"""
-        for task in tasks:
-            self.task_board.post_task(task)
-            print(f"✅ 已发布任务: {task.task_name} ({task.task_id})")
-    
-    def evaluate_proposal(self, proposal: TaskProposal) -> float:
-        """评估提案质量，返回评分"""
-        score = 0.0
+    def decompose_task(self, task_description: str, inputs: Dict[str, Any] = None) -> List[TaskAnnouncement]:
+        """使用LLM智能分解复杂任务为子任务（完全基于prompt）"""
+        if inputs is None:
+            inputs = {}
         
-        # 基础分：根据置信度
-        confidence_scores = {"高": 30, "中": 20, "低": 10}
-        score += confidence_scores.get(proposal.confidence, 15)
+        print(f"\n🧠 调度蜂开始智能任务分解...")
+        print(f"   原始任务: {task_description}")
         
-        # 技能匹配分：检查Agent能力是否匹配任务需求
-        task = self.task_dag.tasks.get(proposal.task_id)
-        if task:
-            agent_caps = self.agent_capabilities.get(proposal.agent_name, [])
-            if any(cap in task.description for cap in agent_caps):
-                score += 25
-        
-        # 计划详细程度分
-        if len(proposal.execution_plan) > 50:
-            score += 20
-        elif len(proposal.execution_plan) > 20:
-            score += 15
-        else:
-            score += 10
-        
-        # 时间合理性分
-        if "分钟" in proposal.estimated_time:
-            score += 15
-        elif "小时" in proposal.estimated_time:
-            score += 10
-        
-        return score
-    
-    def assign_tasks(self):
-        """根据提案分配任务"""
-        # 获取所有有提案的任务，而不仅仅是"可执行"的任务
-        pending_tasks = self.task_board.get_pending_tasks()
-        assigned_count = 0
-        
-        for task in pending_tasks:
-            if task.task_status == "ASSIGNED":
-                continue  # 跳过已分配的任务
-                
-            proposals = self.task_board.get_task_proposals(task.task_id)
-            if not proposals:
-                print(f"⚠️ 任务 {task.task_name} 没有收到提案")
-                continue
-            
-            # 评估所有提案
-            scored_proposals = []
-            for proposal in proposals:
-                score = self.evaluate_proposal(proposal)
-                scored_proposals.append((proposal, score))
-            
-            # 选择得分最高的提案
-            if scored_proposals:
-                best_proposal, best_score = max(scored_proposals, key=lambda x: x[1])
-                
-                # 分配任务
-                if self.task_board.assign_task(task.task_id, best_proposal.agent_name):
-                    print(f"🎯 任务 {task.task_name} 已分配给 {best_proposal.agent_name} (评分: {best_score})")
-                    
-                    # 更新DAG中的任务状态
-                    self.task_dag.tasks[task.task_id].task_status = "ASSIGNED"
-                    assigned_count += 1
-                else:
-                    print(f"❌ 任务 {task.task_name} 分配失败")
-            else:
-                print(f"⚠️ 任务 {task.task_name} 没有有效提案")
-        
-        print(f"\n📊 任务分配完成: 成功分配 {assigned_count} 个任务")
-    
-    def get_system_status(self) -> str:
-        """获取系统状态概览"""
-        all_tasks = self.task_board.get_all_tasks()
-        pending_tasks = self.task_board.get_pending_tasks()
-        assigned_tasks = [t for t in all_tasks if t.task_status == "ASSIGNED"]
-        ready_tasks = self.task_dag.get_ready_tasks()
-        
-        status = f"""
-=== 调度蜂系统状态 ===
-总任务数: {len(self.task_dag.tasks)}
-待分配任务: {len(pending_tasks)}
-已分配任务: {len(assigned_tasks)}
-可执行任务: {len(ready_tasks)}
-已完成任务: {len(self.task_board.completed_tasks)}
-注册的智能工蜂: {len(self.agents)}
+        # 构建系统提示词
+        system_prompt = """你是一个专业的任务分解专家，负责将复杂的设计任务分解为一系列可执行的子任务。
 
-任务依赖关系:
+你的任务是分析用户的需求，并将其分解为适合不同专业工蜂执行的子任务序列。
+
+系统中有以下专业工蜂：
+1. 工况分析蜂 - 负责需求分析和参数计算
+2. 三维建模蜂 - 负责3D建模和OpenSCAD代码生成
+3. 装配蜂 - 负责装配设计和空间定位
+
+请根据任务类型，合理分解为2-4个子任务，确保任务之间的逻辑顺序和依赖关系正确。
+
+返回格式必须是有效的JSON，包含以下结构：
+{
+    "subtasks": [
+        {
+            "name": "子任务名称",
+            "description": "子任务描述",
+            "estimated_time": "预估时间（分钟）",
+            "deliverable": "交付物",
+            "dependencies": ["依赖的任务索引（从0开始）"]
+        }
+    ]
+}"""
+
+        # 构建用户提示词
+        user_prompt = f"""请将以下任务分解为适合的子任务序列：
+
+任务描述: {task_description}
+输入参数: {inputs}
+
+请分析任务类型，并按照工程设计的标准流程进行分解。考虑任务之间的逻辑依赖关系。"""
+        
+        try:
+            # 调用DeepSeek API进行任务分解
+            response = self._call_deepseek_api(system_prompt, user_prompt)
+            subtasks_data = self._parse_deepseek_response(response)
+            
+            # 创建子任务列表
+            subtasks = []
+            task_mapping = {}  # 用于建立依赖关系
+            
+            for i, subtask_data in enumerate(subtasks_data.get("subtasks", [])):
+                task_id = f"TASK-{str(uuid.uuid4())[:8].upper()}"
+                task_mapping[i] = task_id
+                
+                subtask = TaskAnnouncement(
+                    task_id=task_id,
+                    task_name=subtask_data.get("name", f"子任务{i+1}"),
+                    description=subtask_data.get("description", "待补充描述"),
+                    inputs=inputs,
+                    deliverable=subtask_data.get("deliverable", "交付物"),
+                    deadline=f"{subtask_data.get('estimated_time', '30')}分钟",
+                    created_by=self.name
+                )
+                subtasks.append(subtask)
+                
+                # 发布任务到公告板
+                self.task_board.post_task(subtask)
+                print(f"   ✅ 已创建子任务: {subtask.task_name} ({task_id}) - {subtask_data.get('assigned_agent', '未指定')}")
+            
+            # 建立任务依赖关系
+            for i, subtask_data in enumerate(subtasks_data.get("subtasks", [])):
+                dependencies = subtask_data.get("dependencies", [])
+                if dependencies:
+                    # 将索引转换为实际的task_id
+                    actual_dependencies = []
+                    for dep in dependencies:
+                        if isinstance(dep, int) and dep < len(subtasks):
+                            actual_dependencies.append(task_mapping[dep])
+                    
+                    if actual_dependencies:
+                        self.task_dag.add_task(subtasks[i], actual_dependencies)
+            
+            print(f"\n📋 智能任务分解完成，共生成 {len(subtasks)} 个子任务")
+            return subtasks
+            
+        except Exception as e:
+            print(f"❌ LLM任务分解失败: {str(e)}")
+            raise
+    
+    def _call_deepseek_api(self, system_prompt: str, user_prompt: str) -> str:
+        """调用DeepSeek API"""
+        try:
+            headers = {
+                "Authorization": f"Bearer {self.deepseek_api_key}",
+                "Content-Type": "application/json"
+            }
+            
+            data = {
+                "model": self.deepseek_model,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                "temperature": 0.3,
+                "max_tokens": 2000
+            }
+            
+            response = requests.post(self.deepseek_api_url, json=data, headers=headers, timeout=60)
+            response.raise_for_status()
+            
+            result = response.json()
+            return result["choices"][0]["message"]["content"]
+            
+        except Exception as e:
+            print(f"❌ DeepSeek API调用失败: {str(e)}")
+            raise
+    
+    def _parse_deepseek_response(self, response: str) -> Dict[str, Any]:
+        """解析DeepSeek响应"""
+        try:
+            # 尝试提取JSON部分
+            import re
+            json_match = re.search(r'\{.*\}', response, re.DOTALL)
+            if json_match:
+                json_str = json_match.group(0)
+                return json.loads(json_str)
+            else:
+                # 如果没有找到JSON，尝试解析整个响应
+                try:
+                    return json.loads(response)
+                except:
+                    raise ValueError("响应中未找到有效的JSON格式")
+        except Exception as e:
+            print(f"❌ DeepSeek响应解析失败: {str(e)}")
+            print(f"原始响应: {response[:200]}...")
+            raise
+    
+    
+    def publish_tasks(self, task_description: str, inputs: Dict[str, Any] = None) -> bool:
+        """发布新任务并开始竞标流程（基于LLM API）"""
+        if inputs is None:
+            inputs = {}
+        
+        print(f"\n📢 调度蜂发布新任务...")
+        print(f"   任务描述: {task_description}")
+        print(f"   输入参数: {inputs}")
+        
+        # 分解任务
+        subtasks = self.decompose_task(task_description, inputs)
+        
+        if not subtasks:
+            print("❌ 任务分解失败")
+            return False
+        
+        # 通知所有工蜂有新任务
+        self.send_message(
+            f"新任务已发布：{task_description}，共 {len(subtasks)} 个子任务",
+            "任务发布",
+            "TASK_REQUEST",
+            related_task_id=subtasks[0].task_id
+        )
+        
+        # 触发工蜂竞标过程
+        self.trigger_bidding_process(task_description, inputs)
+        
+        # 等待提案（简化处理）
+        print("\n⏳ 等待工蜂提交提案...")
+        time.sleep(10)  # 给工蜂时间提交提案
+        
+        # 评估提案并分配任务
+        for task in subtasks:
+            self.evaluate_and_assign_task(task.task_id)
+        
+        return True
+    
+    def evaluate_and_assign_task(self, task_id: str) -> bool:
+        """使用LLM智能评估提案并分配任务（完全基于prompt）"""
+        proposals = self.task_board.get_task_proposals(task_id)
+        
+        if not proposals:
+            print(f"   ⚠️ 任务 {task_id} 没有收到提案")
+            return False
+        
+        print(f"\n🧠 调度蜂开始智能提案评估...")
+        print(f"   任务ID: {task_id}")
+        print(f"   收到提案数量: {len(proposals)}")
+        
+        # 获取任务详情
+        task = self._get_task_by_id(task_id)
+        if not task:
+            print(f"   ❌ 未找到任务详情")
+            return False
+        
+        # 构建系统提示词
+        system_prompt = """你是一个专业的任务分配专家，负责评估工蜂提交的任务提案并选择最佳的执行者。
+
+你的评估标准包括：
+1. 提案者的专业能力与任务匹配度
+2. 执行计划的合理性和可行性
+3. 置信度等级
+4. 预估完成时间
+5. 角色声明的专业性
+
+请仔细分析每个提案，并选择最适合执行该任务的工蜂。
+
+返回格式必须是有效的JSON，包含以下结构：
+{
+    "best_proposal_index": 提案索引（从0开始）,
+    "evaluation_reasoning": "详细评估理由",
+    "risk_assessment": "风险评估",
+    "execution_strategy": "执行策略建议"
+}"""
+
+        # 构建用户提示词
+        user_prompt = f"""请评估以下任务的提案并选择最佳执行者：
+
+任务信息：
+- 任务名称: {task.task_name}
+- 任务描述: {task.description}
+- 期望交付物: {task.deliverable}
+- 完成时限: {task.deadline}
+
+提案列表：
 """
         
-        for task_id, deps in self.task_dag.dependencies.items():
-            task_name = self.task_dag.tasks[task_id].task_name
-            deps_names = []
-            for dep_id in deps:
-                dep_task = self.task_dag.tasks.get(dep_id)
-                if dep_task:
-                    deps_names.append(dep_task.task_name)
-                else:
-                    deps_names.append(f"未知任务({dep_id})")
-            status += f"- {task_name} 依赖: {', '.join(deps_names) if deps_names else '无'}\n"
+        for i, proposal in enumerate(proposals):
+            user_prompt += f"""
+提案 {i+1}:
+- 提案ID: {proposal.proposal_id}
+- 提交者: {proposal.agent_name}
+- 角色声明: {proposal.role_declaration}
+- 执行计划: {proposal.execution_plan}
+- 置信度: {proposal.confidence}
+- 预估时间: {proposal.estimated_time}
+"""
         
-        status += "=================="
-        return status
-    
-    def show_bidding_status(self) -> str:
-        """显示竞标状态"""
-        pending_tasks = self.task_board.get_pending_tasks()
+        user_prompt += """
+
+请基于以上信息，选择最佳提案并提供详细评估。"""
         
-        if not pending_tasks:
-            return "没有待分配的任务"
+        # 调用DeepSeek API进行提案评估
+        response = self._call_deepseek_api(system_prompt, user_prompt)
+        evaluation_result = self._parse_deepseek_response(response)
         
-        status = "\n=== 竞标状态 ===\n"
-        
-        for task in pending_tasks:
-            proposals = self.task_board.get_task_proposals(task.task_id)
-            status += f"\n任务: {task.task_name} ({task.task_id})\n"
-            status += f"状态: {task.task_status}\n"
+        best_index = evaluation_result.get("best_proposal_index", 0)
+        if 0 <= best_index < len(proposals):
+            best_proposal = proposals[best_index]
             
-            if proposals:
-                status += f"提案数量: {len(proposals)}\n"
-                for i, proposal in enumerate(proposals, 1):
-                    status += f"  提案{i}: {proposal.agent_name} "
-                    status += f"(置信度: {proposal.confidence}, "
-                    status += f"时间: {proposal.estimated_time})\n"
-            else:
-                status += "提案数量: 0\n"
-        
-        status += "=================="
-        return status
-    
-    def run_workflow(self, user_request: str):
-        """运行完整的工作流程"""
-        print(f"\n🚀 开始执行任务: {user_request}")
-        
-        # 1. 任务分解
-        print("\n📋 步骤1: 任务分解")
-        tasks = self.decompose_task(user_request)
-        print(f"   分解出 {len(tasks)} 个子任务")
-        
-        # 2. 发布任务
-        print("\n📢 步骤2: 发布任务到公告板")
-        self.publish_tasks(tasks)
-        
-        # 3. 智能工蜂自动竞标
-        print("\n🤖 步骤3: 智能工蜂自动分析和竞标")
-        self.trigger_intelligent_bidding()
-        
-        # 显示竞标状态
-        print("\n📊 竞标状态:")
-        print(self.show_bidding_status())
-        
-        # 4. 分配任务
-        print("\n🎯 步骤4: 智能分配任务")
-        self.assign_tasks()
-        
-        # 5. 执行任务
-        print("\n⚡ 步骤5: 工蜂执行分配到的任务")
-        self.execute_assigned_tasks()
-        
-        # 6. 显示最终状态
-        print("\n📊 最终系统状态:")
-        final_status = self.get_system_status()
-        print(final_status)
-    
-    def execute_assigned_tasks(self):
-        """让工蜂执行分配到的任务"""
-        print("   开始执行分配的任务...")
-        
-        # 获取所有已分配的任务
-        all_tasks = self.task_board.get_all_tasks()
-        assigned_tasks = [t for t in all_tasks if t.task_status == "ASSIGNED"]
-        
-        if not assigned_tasks:
-            print("   没有已分配的任务需要执行")
-            return
-        
-        print(f"   发现 {len(assigned_tasks)} 个已分配任务")
-        
-        # 按依赖关系排序任务（确保依赖任务先执行）
-        execution_order = self._get_execution_order(assigned_tasks)
-        
-        for task_id in execution_order:
-            task = self.task_dag.tasks.get(task_id)
-            if not task or task.task_status != "ASSIGNED":
-                continue
-                
-            assigned_agent_name = task.assigned_agent
-            if not assigned_agent_name:
-                continue
-                
-            agent = self.agents.get(assigned_agent_name)
-            if not agent:
-                print(f"   ⚠️ 未找到Agent: {assigned_agent_name}")
-                continue
+            print(f"   📊 LLM评估结果:")
+            print(f"      最佳提案: {best_proposal.agent_name} ({best_proposal.proposal_id})")
+            print(f"      评估理由: {evaluation_result.get('evaluation_reasoning', '无')}")
+            print(f"      风险评估: {evaluation_result.get('risk_assessment', '无')}")
             
-            print(f"\n   🚀 执行任务: {task.task_name}")
-            print(f"   执行者: {assigned_agent_name}")
-            print(f"   任务描述: {task.description}")
-            
-            # 执行任务
-            success = agent.execute_task(task_id)
-            
+            # 分配任务给最佳提案者
+            success = self.assign_task(task_id, best_proposal.agent_name)
             if success:
-                print(f"   ✅ 任务 {task.task_name} 执行成功")
-                # 更新DAG中的任务状态
-                self.task_dag.tasks[task_id].task_status = "COMPLETED"
-            else:
-                print(f"   ❌ 任务 {task.task_name} 执行失败")
-                # 更新DAG中的任务状态
-                self.task_dag.tasks[task_id].task_status = "FAILED"
-            
-            print()  # 空行分隔
+                print(f"   ✅ 任务已智能分配给 {best_proposal.agent_name}")
+                
+                # 通知中标者，包含LLM的评估建议
+                self.send_message(
+                    f"恭喜！您获得了任务 {task_id}。\n评估理由：{evaluation_result.get('evaluation_reasoning', '无')}\n执行策略：{evaluation_result.get('execution_strategy', '标准流程')}",
+                    "任务分配",
+                    "TASK_UPDATE",
+                    receiver=best_proposal.agent_name,
+                    related_task_id=task_id
+                )
+                
+                # 立即通知中标Agent开始执行任务
+                for agent in self.registered_agents:
+                    if agent.name == best_proposal.agent_name and hasattr(agent, 'work_on_assigned_tasks'):
+                        try:
+                            print(f"   📢 通知 {agent.name} 开始执行任务...")
+                            agent.work_on_assigned_tasks()
+                        except Exception as e:
+                            print(f"   ❌ {agent.name} 执行任务失败: {e}")
+                        break
+                
+                return True
+        else:
+            print(f"   ❌ LLM评估结果无效，索引超出范围")
+            raise ValueError("LLM评估返回的索引超出范围")
         
-        print("   任务执行完成！")
+        return False
     
-    def _get_execution_order(self, tasks: List[TaskAnnouncement]) -> List[str]:
-        """获取任务的执行顺序（考虑依赖关系）"""
-        # 简化的拓扑排序
-        execution_order = []
-        visited = set()
+    def trigger_bidding_process(self, task_description: str, inputs: Dict[str, Any] = None) -> bool:
+        """触发工蜂竞标过程（基于LLM API）"""
+        if inputs is None:
+            inputs = {}
         
-        def visit(task_id):
-            if task_id in visited:
-                return
-            visited.add(task_id)
-            
-            # 先访问依赖任务
-            dependencies = self.task_dag.get_task_dependencies(task_id)
-            for dep_id in dependencies:
-                if dep_id in self.task_dag.tasks:
-                    visit(dep_id)
-            
-            execution_order.append(task_id)
+        print(f"\n📢 调度蜂触发工蜂竞标过程...")
+        print(f"   任务描述: {task_description}")
         
-        # 访问所有任务
-        for task in tasks:
-            visit(task.task_id)
-        
-        return execution_order
-    
-    def trigger_intelligent_bidding(self):
-        """触发智能工蜂的自动竞标"""
-        print("   智能工蜂开始分析任务...")
-        
-        # 获取所有待分配任务
+        # 获取所有待分配的任务
         pending_tasks = self.task_board.get_pending_tasks()
         if not pending_tasks:
-            print("   没有待分配的任务")
-            return
+            print("   ⚠️ 没有待分配的任务")
+            return False
         
-        print(f"   发现 {len(pending_tasks)} 个待分配任务")
+        # 通知所有工蜂开始竞标
+        for agent in self.registered_agents:
+            if hasattr(agent, 'auto_bid_on_tasks'):
+                print(f"   📣 通知 {agent.name} 开始任务竞标...")
+                try:
+                    agent.auto_bid_on_tasks()
+                except Exception as e:
+                    print(f"   ❌ {agent.name} 竞标失败: {str(e)}")
         
-        for agent_name, agent in self.agents.items():
-            print(f"   🤖 {agent_name} 开始任务分析...")
-            agent.auto_bid_on_tasks()
-            time.sleep(0.5)  # 减少等待时间
-        
-        print("   智能竞标完成！")
+        return True
     
-    def find_best_agent_for_task(self, task: TaskAnnouncement) -> Optional[SmartBeeAgent]:
-        """为任务找到最合适的工蜂"""
-        best_agent = None
-        best_score = 0
+    def _get_task_by_id(self, task_id: str) -> Optional[TaskAnnouncement]:
+        """根据任务ID获取任务详情"""
+        all_tasks = self.task_board.get_all_tasks()
+        for task in all_tasks:
+            if task.task_id == task_id:
+                return task
+        return None
+    
+    
+    def assign_task(self, task_id: str, agent_name: str) -> bool:
+        """分配任务给指定Agent"""
+        success = self.task_board.assign_task(task_id, agent_name)
+        if success:
+            # 注意：active_tasks在任务开始执行时才会更新
+            self.task_queue.append(task_id)
+        return success
+    
+    def get_system_status(self) -> Dict[str, Any]:
+        """获取系统状态"""
+        # 统计IN_PROGRESS状态的任务
+        all_tasks = self.task_board.get_all_tasks()
+        in_progress_tasks = [task for task in all_tasks if task.task_status == "IN_PROGRESS"]
         
-        for agent_name, agent in self.agents.items():
-            score = 0
-            agent_caps = self.agent_capabilities.get(agent_name, [])
-            
-            # 根据任务描述匹配能力
-            for cap in agent_caps:
-                if cap in task.description:
-                    score += 1
-            
-            if score > best_score:
-                best_score = score
-                best_agent = agent
+        return {
+            "scheduler_name": self.name,
+            "total_tasks": len(all_tasks),
+            "pending_tasks": len(self.task_board.get_pending_tasks()),
+            "active_tasks": len(in_progress_tasks),
+            "completed_tasks": len(self.task_board.completed_tasks),
+            "task_queue_length": len(self.task_queue),
+            "timestamp": datetime.now().isoformat()
+        }
+    
+    def show_bidding_status(self, task_id: str = None):
+        """显示竞标状态"""
+        if task_id:
+            # 显示特定任务的竞标状态
+            proposals = self.task_board.get_task_proposals(task_id)
+            print(f"\n📊 任务 {task_id} 的竞标状态:")
+            if proposals:
+                for proposal in proposals:
+                    print(f"   📝 {proposal.agent_name}: 置信度={proposal.confidence}, 时间={proposal.estimated_time}")
+            else:
+                print("   暂无提案")
+        else:
+            # 显示所有任务的竞标状态
+            pending_tasks = self.task_board.get_pending_tasks()
+            print(f"\n📊 系统竞标状态 (共 {len(pending_tasks)} 个待分配任务):")
+            for task in pending_tasks:
+                proposals = self.task_board.get_task_proposals(task.task_id)
+                print(f"   📋 {task.task_name} ({task.task_id}): {len(proposals)} 个提案")
+                for proposal in proposals:
+                    print(f"      📝 {proposal.agent_name}: {proposal.confidence}, {proposal.estimated_time}")
+    
+    def run_workflow(self, task_description: str, inputs: Dict[str, Any] = None) -> bool:
+        """运行完整工作流"""
+        if inputs is None:
+            inputs = {}
         
-        return best_agent
+        print(f"\n🚀 调度蜂启动工作流...")
+        print(f"   任务: {task_description}")
+        
+        # 发布任务
+        success = self.publish_tasks(task_description, inputs)
+        if not success:
+            print("❌ 工作流启动失败")
+            return False
+        
+        # 通知所有Agent开始执行分配的任务
+        print("\n📢 通知所有Agent开始执行分配的任务...")
+        for agent in self.registered_agents:
+            if hasattr(agent, 'work_on_assigned_tasks'):
+                try:
+                    agent.work_on_assigned_tasks()
+                except Exception as e:
+                    print(f"❌ {agent.name} 执行任务失败: {e}")
+        
+        # 监控任务执行
+        print("\n📊 监控任务执行...")
+        start_time = time.time()
+        
+        while True:
+            # 检查系统状态
+            status = self.get_system_status()
+            print(f"   状态: 活跃任务={status['active_tasks']}, 已完成={status['completed_tasks']}")
+            
+            # 如果所有任务都完成，退出循环
+            if status['active_tasks'] == 0 and status['pending_tasks'] == 0:
+                print("\n✅ 所有任务已完成！")
+                break
+            
+            # 超时检查
+            if time.time() - start_time > 300:  # 5分钟超时
+                print("\n⚠️ 工作流执行超时")
+                break
+            
+            time.sleep(5)  # 每5秒检查一次
+        
+        # 显示最终状态
+        final_status = self.get_system_status()
+        print(f"\n📊 工作流完成状态:")
+        print(f"   总任务数: {final_status['total_tasks']}")
+        print(f"   已完成任务: {final_status['completed_tasks']}")
+        print(f"   执行时间: {int(time.time() - start_time)} 秒")
+        
+        return True
 
 # 创建全局实例
 task_board = TaskBoard()
 task_dag = TaskDAG()
 scheduler_bee = SchedulerBee(task_board, task_dag)
 
-# 创建LLM客户端
-llm_client = LLMClient("deepseek")
+
 
 # 导入与注册智能工蜂移动到 __main__ 保护块中，避免导入时循环依赖
 
@@ -1189,28 +1026,60 @@ if __name__ == "__main__":
     print("🚀 启动Bee-MAS智能调度系统...")
 
     # 运行时再导入并注册工蜂，防止导入时循环
-    from .agents.parameter_analysis_bee import ParameterAnalysisBee
-    from .agents.modeling_bee import ModelingBee
-    from .agents.assembly_bee import AssemblyBee
-    from .agents.verification_bee import VerificationBee
+    import sys
+    import os
+    
+    # 添加项目根目录到Python路径，确保能够使用绝对导入
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(current_dir)  # 项目根目录
+    
+    if project_root not in sys.path:
+        sys.path.insert(0, project_root)
+    
+    if current_dir not in sys.path:
+        sys.path.insert(0, current_dir)
+    
+    try:
+        # 尝试使用绝对导入
+        from bee_mas.agents.parameter_analysis_bee import ParameterAnalysisBee
+        from bee_mas.agents.modeling_bee import ModelingBee
+        from bee_mas.agents.assembly_bee import AssemblyBee
+    except ImportError as e:
+        print("❌ 无法导入工蜂模块，请确保文件结构正确")
+        print(f"导入错误详情: {e}")
+        print(f"当前Python路径: {sys.path}")
+        print(f"当前工作目录: {os.getcwd()}")
+        print(f"脚本所在目录: {current_dir}")
+        
+        # 检查agents目录是否存在
+        agents_dir = os.path.join(current_dir, "agents")
+        print(f"agents目录是否存在: {os.path.exists(agents_dir)}")
+        
+        # 检查agents/__init__.py是否存在
+        agents_init = os.path.join(agents_dir, "__init__.py")
+        print(f"agents/__init__.py是否存在: {os.path.exists(agents_init)}")
+        
+        # 列出agents目录中的文件
+        if os.path.exists(agents_dir):
+            print(f"agents目录中的文件: {os.listdir(agents_dir)}")
+        
+        exit(1)
 
     # 创建智能工蜂
-    工况分析蜂 = ParameterAnalysisBee(task_board, llm_client)
-    三维建模蜂 = ModelingBee(task_board, llm_client)
-    装配蜂 = AssemblyBee(task_board, llm_client)
-    验证蜂 = VerificationBee(task_board, llm_client)
+    工况分析蜂 = ParameterAnalysisBee(task_board)
+    三维建模蜂 = ModelingBee(task_board)
+    装配蜂 = AssemblyBee(task_board)
 
     # 注册智能工蜂到调度蜂
     scheduler_bee.register_agent(工况分析蜂)
     scheduler_bee.register_agent(三维建模蜂)
     scheduler_bee.register_agent(装配蜂)
-    scheduler_bee.register_agent(验证蜂)
 
     print("\n" + "="*50)
-    print("开始完整智能工作流程...")
+    print("开始智能工作流程...")
     print("="*50)
 
     # 运行完整的工作流程
-    scheduler_bee.run_workflow("生成一个齿轮组")
+    scheduler_bee.run_workflow("为小型传送带设计一组直齿圆柱齿轮，期望模数2左右，齿数在20~30，常规材料与制造工艺。")
 
-    print("\n🎉 Bee-MAS智能系统运行完成!")
+    print("\n🎉 Bee-MAS智能系统运行完成！")
