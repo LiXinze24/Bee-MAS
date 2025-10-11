@@ -32,6 +32,8 @@ class ParameterAnalysisBee(SmartBeeAgent):
     
     def execute_task(self, task_id: str) -> bool:
         """执行参数分析任务（仅 Dify）"""
+        from ..main import data_flow_logger  # 导入全局日志记录器
+        
         if not self.current_task:
             self.current_task = task_id
         
@@ -40,6 +42,9 @@ class ParameterAnalysisBee(SmartBeeAgent):
             print(f"❌ {self.name}: 未找到任务 {task_id}")
             return False
         
+        # 记录任务执行开始
+        data_flow_logger.log_task_execution_start(task_id, self.name, task.inputs)
+        
         print(f"\n🚀 {self.name} 开始执行任务: {task.task_name}")
         print(f"   任务描述: {task.description}")
         print(f"   输入参数: {task.inputs}")
@@ -47,6 +52,9 @@ class ParameterAnalysisBee(SmartBeeAgent):
         try:
             result = self._execute_parameter_analysis(task)
             if result:
+                # 记录任务执行结果
+                data_flow_logger.log_task_execution_result(task_id, self.name, result)
+                
                 # 保存结果供后续使用
                 self._last_result = result
                 self.task_board.update_task_status(task_id, "COMPLETED")
@@ -60,6 +68,7 @@ class ParameterAnalysisBee(SmartBeeAgent):
                 return False
         except Exception as e:
             print(f"❌ {self.name} 任务执行异常: {e}")
+            data_flow_logger.log_error(self.name, str(e))
             self.task_board.update_task_status(task_id, "FAILED")
             self.current_task = None
             return False
@@ -105,6 +114,8 @@ class ParameterAnalysisBee(SmartBeeAgent):
         - Body: { "inputs": {"requirements":..., "task_type":...}, 可选 "app_id": ... }
         返回：期望为 JSON；结果对象默认在 data.outputs.result，可通过 DIFY_RESULT_PATH 覆盖。
         """
+        from ..main import data_flow_logger  # 导入全局日志记录器
+        
         url = (self.dify_api_url or "").rstrip('/')
         headers = {
             "Authorization": f"Bearer {self.dify_api_key}",
@@ -122,68 +133,137 @@ class ParameterAnalysisBee(SmartBeeAgent):
         if "/workflows/run" in url:
             payload["response_mode"] = "blocking"
         
-        resp = requests.post(url, headers=headers, json=payload, timeout=120)
-        content_type = resp.headers.get("Content-Type", "")
-        if resp.status_code != 200:
-            snippet = resp.text[:200] if resp.text else ""
-            raise RuntimeError(f"Dify API 调用失败: {resp.status_code}, Content-Type={content_type}, 响应片段: {snippet}")
-        
-        # 解析 JSON，给出更友好的错误提示
         try:
-            data = resp.json()
-        except Exception:
-            snippet = resp.text[:200] if resp.text else ""
-            raise RuntimeError(f"Dify API 返回非JSON，Content-Type={content_type}，响应片段: {snippet}")
-        
-        # 允许多种返回格式：1) 直接是所需结构；2) 位于可配置路径（默认 data.outputs.result）；3) 工作流API格式
-        result_json: Optional[Dict[str, Any]] = None
-        if isinstance(data, dict) and all(k in data for k in ("parameters", "units", "constraints")):
-            result_json = data
-        elif isinstance(data, dict) and "data" in data:
-            # 工作流API格式，尝试从data中提取结果
-            workflow_data = data["data"]
-            if isinstance(workflow_data, dict):
-                # 尝试多种可能的结果路径
-                result_json = self._extract_by_path(workflow_data, "outputs.result") or \
-                             self._extract_by_path(workflow_data, "result") or \
-                             workflow_data
-        else:
-            result_json = self._extract_by_path(data, self.dify_result_path)
-        
-        if not result_json:
-            # 回显数据结构，帮助用户调整 DIFY_RESULT_PATH
-            def visualize_data_structure(d, indent=0):
-                spaces = "  " * indent
-                if isinstance(d, dict):
-                    items = []
-                    for k, v in d.items():
-                        if isinstance(v, (dict, list)) and len(str(v)) > 100:
-                            items.append(f"{spaces}{k}: {type(v).__name__}(...)")
-                        else:
-                            items.append(f"{spaces}{k}: {v}")
-                    return "\n".join(items)
-                elif isinstance(d, list):
-                    return f"{spaces}List with {len(d)} items"
-                else:
-                    return f"{spaces}{d}"
+            # 记录API请求
+            data_flow_logger.log_api_request(self.name, url, payload)
             
-            structure_info = visualize_data_structure(data) if isinstance(data, dict) else str(data)
-            raise RuntimeError(
-                f"未能在返回中找到结果对象，请检查 DIFY_RESULT_PATH（当前: {self.dify_result_path}）。" \
-                f"返回keys: {list(data.keys()) if isinstance(data, dict) else type(data)}\n" \
-                f"数据结构:\n{structure_info}"
-            )
-        
-        return {
-            "task_id": task.task_id,
-            "agent_name": self.name,
-            "execution_time": datetime.now().isoformat(),
-            "result_type": "参数分析报告",
-            "parameters": result_json.get("parameters", {}),
-            "units": result_json.get("units", {}),
-            "constraints": result_json.get("constraints", []),
-            "assumptions": result_json.get("assumptions", []),
-            "recommendations": result_json.get("recommendations", []),
-            "summary": result_json.get("summary", "参数分析完成"),
-            "raw_dify_response": data
-        }
+            resp = requests.post(url, headers=headers, json=payload, timeout=180)
+            content_type = resp.headers.get("Content-Type", "")
+            
+            # 记录API响应
+            data_flow_logger.log_api_response(self.name, resp)
+            
+            if resp.status_code != 200:
+                snippet = resp.text[:200] if resp.text else ""
+                raise RuntimeError(f"Dify API 调用失败: {resp.status_code}, Content-Type={content_type}, 响应片段: {snippet}")
+            
+            # 解析 JSON，给出更友好的错误提示
+            try:
+                data = resp.json()
+            except Exception:
+                snippet = resp.text[:200] if resp.text else ""
+                raise RuntimeError(f"Dify API 返回非JSON，Content-Type={content_type}，响应片段: {snippet}")
+            
+            # 允许多种返回格式：1) 直接是所需结构；2) 位于可配置路径（默认 data.outputs.result）；3) 工作流API格式
+            result_json: Optional[Dict[str, Any]] = None
+            if isinstance(data, dict) and all(k in data for k in ("parameters", "units", "constraints")):
+                result_json = data
+                print(f"   📄 直接获取到参数结构")
+            elif isinstance(data, dict) and "data" in data:
+                # 工作流API格式，尝试从data中提取结果
+                workflow_data = data["data"]
+                if isinstance(workflow_data, dict):
+                    # 尝试多种可能的结果路径
+                    result_json = self._extract_by_path(workflow_data, "outputs.result") or \
+                                 self._extract_by_path(workflow_data, "result") or \
+                                 workflow_data
+                    
+                    # 如果结果路径中包含text字段，尝试解析JSON
+                    if result_json and "text" in result_json:
+                        print(f"   📄 找到text字段，尝试解析JSON")
+                        try:
+                            import re
+                            json_match = re.search(r'```json\n(.*?)\n```', result_json["text"], re.DOTALL)
+                            if json_match:
+                                json_str = json_match.group(1)
+                                parsed_result = json.loads(json_str)
+                                result_json.update(parsed_result)
+                                print(f"   📄 从text字段解析出参数信息，包含 {len(parsed_result.get('parameters', {}))} 个参数")
+                            else:
+                                # 尝试直接解析text字段中的JSON
+                                try:
+                                    parsed_result = json.loads(result_json["text"])
+                                    result_json.update(parsed_result)
+                                    print(f"   📄 直接解析text字段中的JSON，包含 {len(parsed_result.get('parameters', {}))} 个参数")
+                                except:
+                                    print(f"   ⚠️ 无法解析text字段中的JSON")
+                        except Exception as e:
+                            print(f"   ⚠️ 解析text字段失败: {e}")
+                    else:
+                        print(f"   ⚠️ 结果路径中没有text字段")
+                        # 尝试从outputs.text中解析JSON
+                        outputs_text = self._extract_by_path(workflow_data, "outputs.text")
+                        if outputs_text:
+                            print(f"   📄 从outputs.text字段尝试解析JSON")
+                            try:
+                                import re
+                                json_match = re.search(r'```json\n(.*?)\n```', outputs_text, re.DOTALL)
+                                if json_match:
+                                    json_str = json_match.group(1)
+                                    parsed_result = json.loads(json_str)
+                                    result_json = parsed_result
+                                    print(f"   📄 从outputs.text字段解析出参数信息，包含 {len(parsed_result.get('parameters', {}))} 个参数")
+                                else:
+                                    # 尝试直接解析text字段中的JSON
+                                    try:
+                                        parsed_result = json.loads(outputs_text)
+                                        result_json = parsed_result
+                                        print(f"   📄 直接解析outputs.text字段中的JSON，包含 {len(parsed_result.get('parameters', {}))} 个参数")
+                                    except:
+                                        print(f"   ⚠️ 无法解析outputs.text字段中的JSON")
+                            except Exception as e:
+                                print(f"   ⚠️ 解析outputs.text字段失败: {e}")
+            else:
+                result_json = self._extract_by_path(data, self.dify_result_path)
+                print(f"   📄 从路径 {self.dify_result_path} 提取结果")
+            
+            # 打印最终结果的结构
+            if result_json:
+                print(f"   📊 最终结果结构: {list(result_json.keys())}")
+                if "parameters" in result_json:
+                    print(f"   📊 参数数量: {len(result_json['parameters'])}")
+                else:
+                    print(f"   ⚠️ 结果中没有parameters字段")
+            else:
+                print(f"   ⚠️ 未能获取到有效结果")
+            
+            if not result_json:
+                # 回显数据结构，帮助用户调整 DIFY_RESULT_PATH
+                def visualize_data_structure(d, indent=0):
+                    spaces = "  " * indent
+                    if isinstance(d, dict):
+                        items = []
+                        for k, v in d.items():
+                            if isinstance(v, (dict, list)) and len(str(v)) > 100:
+                                items.append(f"{spaces}{k}: {type(v).__name__}(...)")
+                            else:
+                                items.append(f"{spaces}{k}: {v}")
+                        return "\n".join(items)
+                    elif isinstance(d, list):
+                        return f"{spaces}List with {len(d)} items"
+                    else:
+                        return f"{spaces}{d}"
+                
+                structure_info = visualize_data_structure(data) if isinstance(data, dict) else str(data)
+                raise RuntimeError(
+                    f"未能在返回中找到结果对象，请检查 DIFY_RESULT_PATH（当前: {self.dify_result_path}）。" \
+                    f"返回keys: {list(data.keys()) if isinstance(data, dict) else type(data)}\n" \
+                    f"数据结构:\n{structure_info}"
+                )
+            
+            return {
+                "task_id": task.task_id,
+                "agent_name": self.name,
+                "execution_time": datetime.now().isoformat(),
+                "result_type": "参数分析报告",
+                "parameters": result_json.get("parameters", {}),
+                "units": result_json.get("units", {}),
+                "constraints": result_json.get("constraints", []),
+                "assumptions": result_json.get("assumptions", []),
+                "recommendations": result_json.get("recommendations", []),
+                "summary": result_json.get("summary", "参数分析完成"),
+                "raw_dify_response": data
+            }
+        except Exception as e:
+            data_flow_logger.log_error(self.name, str(e))
+            raise

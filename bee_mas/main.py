@@ -7,7 +7,83 @@ import json
 import requests
 import math # Added for math.radians
 import os # Added for os.getenv
+import logging
 import agents
+
+class DataFlowLogger:
+    """数据流日志记录器"""
+    
+    def __init__(self, log_file="data_flow.log"):
+        self.log_file = log_file
+        self.logger = logging.getLogger("DataFlowLogger")
+        self.logger.setLevel(logging.DEBUG)
+        
+        # 创建文件处理器
+        file_handler = logging.FileHandler(log_file, mode='w', encoding='utf-8')
+        file_handler.setLevel(logging.DEBUG)
+        
+        # 创建格式化器
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
+        )
+        file_handler.setFormatter(formatter)
+        
+        # 添加处理器到日志记录器
+        if not self.logger.handlers:
+            self.logger.addHandler(file_handler)
+    
+    def log_task_creation(self, task, dependencies=None):
+        """记录任务创建"""
+        self.logger.info(f"任务创建: {task.task_name} ({task.task_id})")
+        self.logger.debug(f"  任务描述: {task.description}")
+        self.logger.debug(f"  输入参数: {task.inputs}")
+        if dependencies:
+            self.logger.debug(f"  依赖任务: {dependencies}")
+    
+    def log_task_assignment(self, task_id, agent_name):
+        """记录任务分配"""
+        self.logger.info(f"任务分配: {task_id} -> {agent_name}")
+    
+    def log_task_execution_start(self, task_id, agent_name, inputs):
+        """记录任务执行开始"""
+        self.logger.info(f"任务执行开始: {task_id} by {agent_name}")
+        self.logger.debug(f"  输入参数: {inputs}")
+    
+    def log_task_execution_result(self, task_id, agent_name, result):
+        """记录任务执行结果"""
+        self.logger.info(f"任务执行完成: {task_id} by {agent_name}")
+        self.logger.debug(f"  执行结果: {result}")
+    
+    def log_dependency_resolution(self, task_id, dependency_results):
+        """记录依赖解析"""
+        self.logger.info(f"依赖解析: {task_id}")
+        if dependency_results:
+            for dep_id, dep_data in dependency_results.items():
+                self.logger.debug(f"  依赖 {dep_id}: {dep_data['task_name']} by {dep_data['agent_name']}")
+                self.logger.debug(f"    结果摘要: {dep_data['result'].get('summary', '无摘要')}")
+        else:
+            self.logger.warning(f"  未找到依赖任务结果")
+    
+    def log_api_request(self, agent_name, url, payload):
+        """记录API请求"""
+        self.logger.info(f"API请求: {agent_name} -> {url}")
+        self.logger.debug(f"  请求参数: {payload}")
+    
+    def log_api_response(self, agent_name, response):
+        """记录API响应"""
+        self.logger.info(f"API响应: {agent_name}")
+        if hasattr(response, 'status_code'):
+            self.logger.debug(f"  响应状态: {response.status_code}")
+        if hasattr(response, 'text'):
+            self.logger.debug(f"  响应内容: {response.text[:200]}...")
+    
+    def log_error(self, agent_name, error):
+        """记录错误"""
+        self.logger.error(f"错误: {agent_name} - {error}")
+
+# 创建全局数据流日志记录器实例
+data_flow_logger = DataFlowLogger()
 
 class DanceMessage(BaseModel):
     """舞蹈消息 - 用于Agent之间的通信"""
@@ -42,11 +118,12 @@ class TaskAnnouncement(BaseModel):
 class TaskBoard:
     """任务公告板 - 管理所有待分配的任务"""
     
-    def __init__(self):
+    def __init__(self, task_dag=None):
         self.pending_tasks: Dict[str, Dict] = {}
         self.completed_tasks: Dict[str, TaskAnnouncement] = {}
         self.messages: List[DanceMessage] = []  # 存储所有消息
         self.scheduler_bee = None  # 对调度蜂的引用
+        self.task_dag = task_dag  # 添加task_dag属性
     
     def post_task(self, task: TaskAnnouncement) -> str:
         """发布新任务到公告板"""
@@ -251,6 +328,9 @@ class SmartBeeAgent(BeeAgent):
             print(f"❌ {self.name}: 未找到任务 {task_id}")
             return False
         
+        # 记录任务执行开始
+        data_flow_logger.log_task_execution_start(task_id, self.name, task.inputs)
+        
         print(f"\n🚀 {self.name} 开始执行任务: {task.task_name}")
         print(f"   任务描述: {task.description}")
         print(f"   输入参数: {task.inputs}")
@@ -271,6 +351,9 @@ class SmartBeeAgent(BeeAgent):
                 result = self._execute_generic_task(task)
             
             if result:
+                # 记录任务执行结果
+                data_flow_logger.log_task_execution_result(task_id, self.name, result)
+                
                 # 更新任务状态为完成
                 self.task_board.update_task_status(task_id, "COMPLETED")
                 print(f"✅ {self.name} 完成任务: {task.task_name}")
@@ -302,6 +385,7 @@ class SmartBeeAgent(BeeAgent):
                 
         except Exception as e:
             print(f"❌ {self.name} 任务执行异常: {e}")
+            data_flow_logger.log_error(self.name, str(e))
             self.task_board.update_task_status(task_id, "FAILED")
             
             # 从调度蜂的active_tasks中移除
@@ -624,10 +708,16 @@ class SchedulerBee(BeeAgent):
             "description": "子任务描述",
             "estimated_time": "预估时间（分钟）",
             "deliverable": "交付物",
-            "dependencies": ["依赖的任务索引（从0开始）"]
+            "dependencies": [0, 1]  // 依赖的任务索引（整数数组），例如第二个任务依赖第一个任务，则dependencies为[0]
         }
     ]
-}"""
+}
+
+注意：
+1. dependencies字段必须是整数数组，表示依赖的子任务索引
+2. 第一个任务通常没有依赖，dependencies为[]
+3. 后续任务可以依赖前面的任务，索引从0开始
+4. 确保任务依赖关系符合工程设计逻辑"""
 
         # 构建用户提示词
         user_prompt = f"""请将以下任务分解为适合的子任务序列：
@@ -646,6 +736,7 @@ class SchedulerBee(BeeAgent):
             subtasks = []
             task_mapping = {}  # 用于建立依赖关系
             
+            # 先创建所有子任务
             for i, subtask_data in enumerate(subtasks_data.get("subtasks", [])):
                 task_id = f"TASK-{str(uuid.uuid4())[:8].upper()}"
                 task_mapping[i] = task_id
@@ -654,7 +745,7 @@ class SchedulerBee(BeeAgent):
                     task_id=task_id,
                     task_name=subtask_data.get("name", f"子任务{i+1}"),
                     description=subtask_data.get("description", "待补充描述"),
-                    inputs=inputs,
+                    inputs=inputs,  # 暂时使用原始输入，稍后会根据依赖关系更新
                     deliverable=subtask_data.get("deliverable", "交付物"),
                     deadline=f"{subtask_data.get('estimated_time', '30')}分钟",
                     created_by=self.name
@@ -663,20 +754,56 @@ class SchedulerBee(BeeAgent):
                 
                 # 发布任务到公告板
                 self.task_board.post_task(subtask)
+                
+                # 记录任务创建
+                data_flow_logger.log_task_creation(subtask)
+                
                 print(f"   ✅ 已创建子任务: {subtask.task_name} ({task_id}) - {subtask_data.get('assigned_agent', '未指定')}")
             
-            # 建立任务依赖关系
+            # 建立任务依赖关系并更新输入参数
             for i, subtask_data in enumerate(subtasks_data.get("subtasks", [])):
                 dependencies = subtask_data.get("dependencies", [])
+                print(f"   📋 处理子任务 {i}: {subtask_data.get('name', '未命名')}，依赖关系: {dependencies}")
+                
                 if dependencies:
                     # 将索引转换为实际的task_id
                     actual_dependencies = []
+                    dependency_names = []
                     for dep in dependencies:
-                        if isinstance(dep, int) and dep < len(subtasks):
-                            actual_dependencies.append(task_mapping[dep])
+                        # 尝试将字符串转换为整数
+                        try:
+                            dep_index = int(dep)
+                            if 0 <= dep_index < len(subtasks):
+                                actual_dependencies.append(task_mapping[dep_index])
+                                dependency_names.append(subtasks[dep_index].task_name)
+                                print(f"      🔗 依赖索引 {dep} -> 任务ID {task_mapping[dep_index]}")
+                            else:
+                                print(f"      ⚠️ 忽略无效的依赖索引: {dep} (超出范围)")
+                        except (ValueError, TypeError):
+                            print(f"      ⚠️ 忽略无效的依赖索引: {dep} (不是整数)")
                     
                     if actual_dependencies:
+                        print(f"   📋 为任务 {subtasks[i].task_id} 设置依赖: {actual_dependencies}")
                         self.task_dag.add_task(subtasks[i], actual_dependencies)
+                        
+                        # 更新子任务的输入参数，包含依赖信息
+                        enhanced_inputs = inputs.copy()
+                        enhanced_inputs["dependencies"] = actual_dependencies
+                        enhanced_inputs["dependency_names"] = dependency_names
+                        
+                        # 更新任务输入
+                        subtasks[i].inputs = enhanced_inputs
+                        
+                        # 记录任务依赖关系
+                        data_flow_logger.log_task_creation(subtasks[i], actual_dependencies)
+                        
+                        print(f"   🔗 已设置任务依赖: {subtasks[i].task_name} 依赖于 {dependency_names}")
+                    else:
+                        print(f"   ⚠️ 子任务 {subtasks[i].task_name} 的依赖关系为空")
+                else:
+                    # 即使没有依赖关系，也要将任务添加到task_dag中，以便后续查询
+                    print(f"   📋 为无依赖任务 {subtasks[i].task_id} 添加到task_dag")
+                    self.task_dag.add_task(subtasks[i], [])
             
             print(f"\n📋 智能任务分解完成，共生成 {len(subtasks)} 个子任务")
             return subtasks
@@ -721,7 +848,28 @@ class SchedulerBee(BeeAgent):
             json_match = re.search(r'\{.*\}', response, re.DOTALL)
             if json_match:
                 json_str = json_match.group(0)
-                return json.loads(json_str)
+                result = json.loads(json_str)
+                
+                # 验证并修复依赖索引格式
+                if "subtasks" in result:
+                    subtasks = result["subtasks"]
+                    for i, subtask in enumerate(subtasks):
+                        dependencies = subtask.get("dependencies", [])
+                        if dependencies:
+                            validated_deps = []
+                            for dep in dependencies:
+                                try:
+                                    dep_index = int(dep)
+                                    if 0 <= dep_index < len(subtasks):
+                                        validated_deps.append(dep_index)
+                                    else:
+                                        print(f"   ⚠️ 依赖索引 {dep} 超出范围，已忽略")
+                                except (ValueError, TypeError):
+                                    print(f"   ⚠️ 无效的依赖索引 {dep}，已忽略")
+                            subtask["dependencies"] = validated_deps
+                            print(f"   📋 验证子任务 {i} 的依赖关系: {validated_deps}")
+                
+                return result
             else:
                 # 如果没有找到JSON，尝试解析整个响应
                 try:
@@ -792,19 +940,27 @@ class SchedulerBee(BeeAgent):
         # 构建系统提示词
         system_prompt = """你是一个专业的任务分配专家，负责评估工蜂提交的任务提案并选择最佳的执行者。
 
+系统中有以下专业工蜂：
+1. 工况分析蜂 - 专门负责需求分析和参数计算，擅长分析设计需求、计算工程参数
+2. 三维建模蜂 - 专门负责3D建模和OpenSCAD代码生成，擅长创建3D模型和生成建模脚本
+3. 装配蜂 - 专门负责装配设计和空间定位，擅长分析装配关系和空间布局
+
 你的评估标准包括：
-1. 提案者的专业能力与任务匹配度
+1. 提案者的专业能力与任务匹配度（最重要）
 2. 执行计划的合理性和可行性
 3. 置信度等级
 4. 预估完成时间
 5. 角色声明的专业性
 
-请仔细分析每个提案，并选择最适合执行该任务的工蜂。
+请仔细分析每个提案，并选择最适合执行该任务的工蜂。特别注意任务类型与工蜂专业能力的匹配度：
+- 参数分析、需求分析、工程计算类任务应优先分配给工况分析蜂
+- 3D建模、模型设计、OpenSCAD代码生成类任务应优先分配给三维建模蜂
+- 装配设计、空间布局、装配验证类任务应优先分配给装配蜂
 
 返回格式必须是有效的JSON，包含以下结构：
 {
     "best_proposal_index": 提案索引（从0开始）,
-    "evaluation_reasoning": "详细评估理由",
+    "evaluation_reasoning": "详细评估理由，重点说明为什么选择该工蜂",
     "risk_assessment": "风险评估",
     "execution_strategy": "执行策略建议"
 }"""
@@ -918,6 +1074,9 @@ class SchedulerBee(BeeAgent):
         """分配任务给指定Agent"""
         success = self.task_board.assign_task(task_id, agent_name)
         if success:
+            # 记录任务分配
+            data_flow_logger.log_task_assignment(task_id, agent_name)
+            
             # 注意：active_tasks在任务开始执行时才会更新
             self.task_queue.append(task_id)
         return success
@@ -1013,8 +1172,8 @@ class SchedulerBee(BeeAgent):
         return True
 
 # 创建全局实例
-task_board = TaskBoard()
 task_dag = TaskDAG()
+task_board = TaskBoard(task_dag)  # 传入task_dag实例
 scheduler_bee = SchedulerBee(task_board, task_dag)
 
 
@@ -1080,6 +1239,6 @@ if __name__ == "__main__":
     print("="*50)
 
     # 运行完整的工作流程
-    scheduler_bee.run_workflow("为小型传送带设计一组直齿圆柱齿轮，期望模数2左右，齿数在20~30，常规材料与制造工艺。")
+    scheduler_bee.run_workflow("设计一个一级减速机，包括齿轮、轴、轴承、箱体等关键部件，期望传动比为3:1，输入功率5kW，输入转速1500rpm。")
 
     print("\n🎉 Bee-MAS智能系统运行完成！")
