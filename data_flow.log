@@ -1,109 +1,84 @@
-2025-10-11 19:10:53 - DataFlowLogger - INFO - 任务创建: 工况分析与参数计算 (TASK-D1AF841A)
-2025-10-11 19:10:53 - DataFlowLogger - DEBUG -   任务描述: 根据输入功率5kW、输入转速1500rpm、传动比3:1等参数，计算齿轮模数、齿数、中心距、轴径、轴承选型等关键设计参数
-2025-10-11 19:10:53 - DataFlowLogger - DEBUG -   输入参数: {}
-2025-10-11 19:10:53 - DataFlowLogger - INFO - 任务创建: 关键部件三维建模 (TASK-DB54C1E7)
-2025-10-11 19:10:53 - DataFlowLogger - DEBUG -   任务描述: 基于计算参数，分别建立齿轮副、传动轴、轴承等关键部件的三维模型，确保几何尺寸和配合关系正确
-2025-10-11 19:10:53 - DataFlowLogger - DEBUG -   输入参数: {}
-2025-10-11 19:10:53 - DataFlowLogger - INFO - 任务创建: 减速机箱体设计 (TASK-F8F56B5E)
-2025-10-11 19:10:53 - DataFlowLogger - DEBUG -   任务描述: 根据关键部件的尺寸和布局，设计减速机箱体结构，包括上下箱体、轴承座、密封结构等
-2025-10-11 19:10:53 - DataFlowLogger - DEBUG -   输入参数: {}
-2025-10-11 19:10:53 - DataFlowLogger - INFO - 任务创建: 整体装配与干涉检查 (TASK-5DC16566)
-2025-10-11 19:10:53 - DataFlowLogger - DEBUG -   任务描述: 将所有部件进行装配，检查各部件之间的配合关系、空间干涉，确保装配合理性和可制造性
-2025-10-11 19:10:53 - DataFlowLogger - DEBUG -   输入参数: {}
-2025-10-11 19:10:53 - DataFlowLogger - INFO - 任务创建: 关键部件三维建模 (TASK-DB54C1E7)
-2025-10-11 19:10:53 - DataFlowLogger - DEBUG -   任务描述: 基于计算参数，分别建立齿轮副、传动轴、轴承等关键部件的三维模型，确保几何尺寸和配合关系正确
-2025-10-11 19:10:53 - DataFlowLogger - DEBUG -   输入参数: {'dependencies': ['TASK-D1AF841A'], 'dependency_names': ['工况分析与参数计算']}
-2025-10-11 19:10:53 - DataFlowLogger - DEBUG -   依赖任务: ['TASK-D1AF841A']
-2025-10-11 19:10:53 - DataFlowLogger - INFO - 任务创建: 减速机箱体设计 (TASK-F8F56B5E)
-2025-10-11 19:10:53 - DataFlowLogger - DEBUG -   任务描述: 根据关键部件的尺寸和布局，设计减速机箱体结构，包括上下箱体、轴承座、密封结构等
-2025-10-11 19:10:53 - DataFlowLogger - DEBUG -   输入参数: {'dependencies': ['TASK-DB54C1E7'], 'dependency_names': ['关键部件三维建模']}
-2025-10-11 19:10:53 - DataFlowLogger - DEBUG -   依赖任务: ['TASK-DB54C1E7']
-2025-10-11 19:10:53 - DataFlowLogger - INFO - 任务创建: 整体装配与干涉检查 (TASK-5DC16566)
-2025-10-11 19:10:53 - DataFlowLogger - DEBUG -   任务描述: 将所有部件进行装配，检查各部件之间的配合关系、空间干涉，确保装配合理性和可制造性
-2025-10-11 19:10:53 - DataFlowLogger - DEBUG -   输入参数: {'dependencies': ['TASK-DB54C1E7', 'TASK-F8F56B5E'], 'dependency_names': ['关键部件三维建模', '减速机箱体设计']}
-2025-10-11 19:10:53 - DataFlowLogger - DEBUG -   依赖任务: ['TASK-DB54C1E7', 'TASK-F8F56B5E']
-2025-10-11 19:13:48 - DataFlowLogger - INFO - 任务分配: TASK-D1AF841A -> 工况分析蜂
-2025-10-11 19:13:48 - DataFlowLogger - INFO - 任务执行开始: TASK-D1AF841A by 工况分析蜂
-2025-10-11 19:13:48 - DataFlowLogger - DEBUG -   输入参数: {}
-2025-10-11 19:13:48 - DataFlowLogger - INFO - API请求: 工况分析蜂 -> https://api.dify.ai/v1/workflows/run
-2025-10-11 19:13:48 - DataFlowLogger - DEBUG -   请求参数: {'inputs': {'query': '根据输入功率5kW、输入转速1500rpm、传动比3:1等参数，计算齿轮模数、齿数、中心距、轴径、轴承选型等关键设计参数'}, 'user': 'bee-mas-system', 'response_mode': 'blocking'}
-2025-10-11 19:14:49 - DataFlowLogger - INFO - API响应: 工况分析蜂
-2025-10-11 19:14:49 - DataFlowLogger - DEBUG -   响应状态: 200
-2025-10-11 19:14:49 - DataFlowLogger - DEBUG -   响应内容: {"task_id": "038687e6-0fe3-4a70-8a99-4ced537cd43a", "workflow_run_id": "1a88a704-e730-41e3-8d65-7b9652025528", "data": {"id": "1a88a704-e730-41e3-8d65-7b9652025528", "workflow_id": "d7697488-d12e-4912...
-2025-10-11 19:14:49 - DataFlowLogger - INFO - 任务执行完成: TASK-D1AF841A by 工况分析蜂
-2025-10-11 19:14:49 - DataFlowLogger - DEBUG -   执行结果: {'task_id': 'TASK-D1AF841A', 'agent_name': '工况分析蜂', 'execution_time': '2025-10-11T19:14:49.317551', 'result_type': '参数分析报告', 'parameters': {'输入功率': {'value': 5, 'unit': 'kW', 'description': '系统输入功率', 'calculation_method': '用户给定'}, '输入转速': {'value': 1500, 'unit': 'rpm', 'description': '小齿轮转速', 'calculation_method': '用户给定'}, '传动比': {'value': 3, 'unit': '-', 'description': '大齿轮与小齿轮转速比', 'calculation_method': '用户给定'}, '输出转速': {'value': 500, 'unit': 'rpm', 'description': '大齿轮转速', 'calculation_method': '输入转速/传动比 = 1500/3 = 500rpm'}, '输出扭矩': {'value': 95.5, 'unit': 'N·m', 'description': '大齿轮输出扭矩', 'calculation_method': 'T = 9550 × P/n = 9550 × 5/500 = 95.5N·m'}, '齿轮模数': {'value': 2, 'unit': 'mm', 'description': '齿轮基本参数，决定齿的大小', 'calculation_method': '基于弯曲强度和接触强度计算，考虑功率和转速选用标准模数'}, '小齿轮齿数': {'value': 24, 'unit': '-', 'description': '主动齿轮齿数', 'calculation_method': '为避免根切，最小齿数≥17，选用24齿保证传动平稳'}, '大齿轮齿数': {'value': 72, 'unit': '-', 'description': '从动齿轮齿数', 'calculation_method': '小齿轮齿数×传动比 = 24×3 = 72齿'}, '中心距': {'value': 96, 'unit': 'mm', 'description': '两齿轮轴心距离', 'calculation_method': 'a = m×(z1+z2)/2 = 2×(24+72)/2 = 96mm'}, '小齿轮分度圆直径': {'value': 48, 'unit': 'mm', 'description': '小齿轮理论啮合圆直径', 'calculation_method': 'd1 = m×z1 = 2×24 = 48mm'}, '大齿轮分度圆直径': {'value': 144, 'unit': 'mm', 'description': '大齿轮理论啮合圆直径', 'calculation_method': 'd2 = m×z2 = 2×72 = 144mm'}, '小齿轮轴径': {'value': 25, 'unit': 'mm', 'description': '小齿轮轴最小直径', 'calculation_method': '基于扭矩和弯曲应力计算，d ≥ 16.2mm，考虑键槽等因素取25mm'}, '大齿轮轴径': {'value': 35, 'unit': 'mm', 'description': '大齿轮轴最小直径', 'calculation_method': '基于输出扭矩计算，d ≥ 22.8mm，考虑载荷和稳定性取35mm'}}, 'units': {'输入功率': 'kW', '输入转速': 'rpm', '传动比': '-', '输出转速': 'rpm', '输出扭矩': 'N·m', '齿轮模数': 'mm', '小齿轮齿数': '-', '大齿轮齿数': '-', '中心距': 'mm', '小齿轮分度圆直径': 'mm', '大齿轮分度圆直径': 'mm', '小齿轮轴径': 'mm', '大齿轮轴径': 'mm'}, 'constraints': [{'constraint': '传动比必须精确为3:1', 'impact': '齿数选择必须满足整数比要求', 'mitigation': '选用24:72齿数组合，确保传动比精确'}, {'constraint': '输入转速较高(1500rpm)', 'impact': '需要保证齿轮动平衡和润滑', 'mitigation': '采用精度等级7级齿轮，确保良好的动平衡性能'}, {'constraint': '空间限制', 'impact': '中心距影响整体结构尺寸', 'mitigation': '优化模数和齿数组合，控制中心距在合理范围内'}], 'assumptions': [{'assumption': '齿轮材料为45钢调质处理', 'justification': '常用齿轮材料，具有良好的强度和耐磨性', 'sensitivity': '材料变更会影响模数选择和承载能力'}, {'assumption': '使用系数K=1.25', 'justification': '中等冲击载荷工况', 'sensitivity': '载荷变化会直接影响轴径和轴承选型'}, {'assumption': '齿轮精度等级7级', 'justification': '适用于一般工业传动', 'sensitivity': '精度等级影响噪声和传动平稳性'}], 'recommendations': [{'recommendation': '小齿轮轴承选用深沟球轴承6205，大齿轮轴承选用6307', 'priority': '高', 'rationale': '基于轴径和载荷计算，满足寿命和承载要求'}, {'recommendation': '采用浸油润滑方式', 'priority': '中', 'rationale': '转速适中，浸油润滑简单可靠'}, {'recommendation': '齿轮进行修形处理', 'priority': '中', 'rationale': '提高啮合质量，减少噪声和振动'}, {'recommendation': '轴端加装密封装置', 'priority': '高', 'rationale': '防止润滑剂泄漏和污染物进入'}], 'summary': '基于5kW输入功率、1500rpm输入转速和3:1传动比要求，设计了模数2mm的齿轮传动系统。小齿轮24齿，大齿轮72齿，中心距96mm。小齿轮轴径25mm，大齿轮轴径35mm。系统输出扭矩95.5N·m，输出转速500rpm。建议选用深沟球轴承6205和6307，采用浸油润滑，确保传动平稳可靠。', 'raw_dify_response': {'task_id': '038687e6-0fe3-4a70-8a99-4ced537cd43a', 'workflow_run_id': '1a88a704-e730-41e3-8d65-7b9652025528', 'data': {'id': '1a88a704-e730-41e3-8d65-7b9652025528', 'workflow_id': 'd7697488-d12e-4912-af8b-2f78395b981d', 'status': 'succeeded', 'outputs': {'text': '```json\n{\n  "parameters": {\n    "输入功率": {\n      "value": 5,\n      "unit": "kW",\n      "description": "系统输入功率",\n      "calculation_method": "用户给定"\n    },\n    "输入转速": {\n      "value": 1500,\n      "unit": "rpm",\n      "description": "小齿轮转速",\n      "calculation_method": "用户给定"\n    },\n    "传动比": {\n      "value": 3,\n      "unit": "-",\n      "description": "大齿轮与小齿轮转速比",\n      "calculation_method": "用户给定"\n    },\n    "输出转速": {\n      "value": 500,\n      "unit": "rpm",\n      "description": "大齿轮转速",\n      "calculation_method": "输入转速/传动比 = 1500/3 = 500rpm"\n    },\n    "输出扭矩": {\n      "value": 95.5,\n      "unit": "N·m",\n      "description": "大齿轮输出扭矩",\n      "calculation_method": "T = 9550 × P/n = 9550 × 5/500 = 95.5N·m"\n    },\n    "齿轮模数": {\n      "value": 2,\n      "unit": "mm",\n      "description": "齿轮基本参数，决定齿的大小",\n      "calculation_method": "基于弯曲强度和接触强度计算，考虑功率和转速选用标准模数"\n    },\n    "小齿轮齿数": {\n      "value": 24,\n      "unit": "-",\n      "description": "主动齿轮齿数",\n      "calculation_method": "为避免根切，最小齿数≥17，选用24齿保证传动平稳"\n    },\n    "大齿轮齿数": {\n      "value": 72,\n      "unit": "-",\n      "description": "从动齿轮齿数",\n      "calculation_method": "小齿轮齿数×传动比 = 24×3 = 72齿"\n    },\n    "中心距": {\n      "value": 96,\n      "unit": "mm",\n      "description": "两齿轮轴心距离",\n      "calculation_method": "a = m×(z1+z2)/2 = 2×(24+72)/2 = 96mm"\n    },\n    "小齿轮分度圆直径": {\n      "value": 48,\n      "unit": "mm",\n      "description": "小齿轮理论啮合圆直径",\n      "calculation_method": "d1 = m×z1 = 2×24 = 48mm"\n    },\n    "大齿轮分度圆直径": {\n      "value": 144,\n      "unit": "mm",\n      "description": "大齿轮理论啮合圆直径",\n      "calculation_method": "d2 = m×z2 = 2×72 = 144mm"\n    },\n    "小齿轮轴径": {\n      "value": 25,\n      "unit": "mm",\n      "description": "小齿轮轴最小直径",\n      "calculation_method": "基于扭矩和弯曲应力计算，d ≥ 16.2mm，考虑键槽等因素取25mm"\n    },\n    "大齿轮轴径": {\n      "value": 35,\n      "unit": "mm",\n      "description": "大齿轮轴最小直径",\n      "calculation_method": "基于输出扭矩计算，d ≥ 22.8mm，考虑载荷和稳定性取35mm"\n    }\n  },\n  "units": {\n    "输入功率": "kW",\n    "输入转速": "rpm",\n    "传动比": "-",\n    "输出转速": "rpm",\n    "输出扭矩": "N·m",\n    "齿轮模数": "mm",\n    "小齿轮齿数": "-",\n    "大齿轮齿数": "-",\n    "中心距": "mm",\n    "小齿轮分度圆直径": "mm",\n    "大齿轮分度圆直径": "mm",\n    "小齿轮轴径": "mm",\n    "大齿轮轴径": "mm"\n  },\n  "constraints": [\n    {\n      "constraint": "传动比必须精确为3:1",\n      "impact": "齿数选择必须满足整数比要求",\n      "mitigation": "选用24:72齿数组合，确保传动比精确"\n    },\n    {\n      "constraint": "输入转速较高(1500rpm)",\n      "impact": "需要保证齿轮动平衡和润滑",\n      "mitigation": "采用精度等级7级齿轮，确保良好的动平衡性能"\n    },\n    {\n      "constraint": "空间限制",\n      "impact": "中心距影响整体结构尺寸",\n      "mitigation": "优化模数和齿数组合，控制中心距在合理范围内"\n    }\n  ],\n  "assumptions": [\n    {\n      "assumption": "齿轮材料为45钢调质处理",\n      "justification": "常用齿轮材料，具有良好的强度和耐磨性",\n      "sensitivity": "材料变更会影响模数选择和承载能力"\n    },\n    {\n      "assumption": "使用系数K=1.25",\n      "justification": "中等冲击载荷工况",\n      "sensitivity": "载荷变化会直接影响轴径和轴承选型"\n    },\n    {\n      "assumption": "齿轮精度等级7级",\n      "justification": "适用于一般工业传动",\n      "sensitivity": "精度等级影响噪声和传动平稳性"\n    }\n  ],\n  "recommendations": [\n    {\n      "recommendation": "小齿轮轴承选用深沟球轴承6205，大齿轮轴承选用6307",\n      "priority": "高",\n      "rationale": "基于轴径和载荷计算，满足寿命和承载要求"\n    },\n    {\n      "recommendation": "采用浸油润滑方式",\n      "priority": "中",\n      "rationale": "转速适中，浸油润滑简单可靠"\n    },\n    {\n      "recommendation": "齿轮进行修形处理",\n      "priority": "中",\n      "rationale": "提高啮合质量，减少噪声和振动"\n    },\n    {\n      "recommendation": "轴端加装密封装置",\n      "priority": "高",\n      "rationale": "防止润滑剂泄漏和污染物进入"\n    }\n  ],\n  "summary": "基于5kW输入功率、1500rpm输入转速和3:1传动比要求，设计了模数2mm的齿轮传动系统。小齿轮24齿，大齿轮72齿，中心距96mm。小齿轮轴径25mm，大齿轮轴径35mm。系统输出扭矩95.5N·m，输出转速500rpm。建议选用深沟球轴承6205和6307，采用浸油润滑，确保传动平稳可靠。"\n}\n```'}, 'error': '', 'elapsed_time': 58.617866, 'total_tokens': 0, 'total_steps': 0, 'created_at': 1760181230, 'finished_at': 1760181288}}}
-2025-10-11 19:15:06 - DataFlowLogger - INFO - 任务分配: TASK-DB54C1E7 -> 三维建模蜂
-2025-10-11 19:15:06 - DataFlowLogger - INFO - 开始解析依赖: TASK-DB54C1E7 by 三维建模蜂
-2025-10-11 19:15:06 - DataFlowLogger - DEBUG -   任务输入: {'dependencies': ['TASK-D1AF841A'], 'dependency_names': ['工况分析与参数计算']}
-2025-10-11 19:15:06 - DataFlowLogger - DEBUG -   从task_dag获取的依赖: ['TASK-D1AF841A']
-2025-10-11 19:15:06 - DataFlowLogger - DEBUG -   最终依赖列表: ['TASK-D1AF841A']
-2025-10-11 19:15:06 - DataFlowLogger - DEBUG -   已完成任务: ['TASK-D1AF841A']
-2025-10-11 19:15:06 - DataFlowLogger - DEBUG -   处理依赖任务: TASK-D1AF841A
-2025-10-11 19:15:06 - DataFlowLogger - DEBUG -   找到已完成任务: 工况分析与参数计算, 分配给: 工况分析蜂
-2025-10-11 19:15:06 - DataFlowLogger - DEBUG -   调度蜂存在，注册的工蜂: ['工况分析蜂', '三维建模蜂', '装配蜂']
-2025-10-11 19:15:06 - DataFlowLogger - DEBUG -   检查工蜂: 工况分析蜂
-2025-10-11 19:15:06 - DataFlowLogger - DEBUG -   找到匹配的工蜂: 工况分析蜂
-2025-10-11 19:15:06 - DataFlowLogger - DEBUG -   工蜂有_last_result: <class 'dict'>
-2025-10-11 19:15:06 - DataFlowLogger - INFO -   获取依赖任务结果: 工况分析与参数计算 -> 工况分析蜂
-2025-10-11 19:15:06 - DataFlowLogger - INFO - 依赖解析: TASK-DB54C1E7
-2025-10-11 19:15:06 - DataFlowLogger - DEBUG -   依赖 TASK-D1AF841A: 工况分析与参数计算 by 工况分析蜂
-2025-10-11 19:15:06 - DataFlowLogger - DEBUG -     结果摘要: 基于5kW输入功率、1500rpm输入转速和3:1传动比要求，设计了模数2mm的齿轮传动系统。小齿轮24齿，大齿轮72齿，中心距96mm。小齿轮轴径25mm，大齿轮轴径35mm。系统输出扭矩95.5N·m，输出转速500rpm。建议选用深沟球轴承6205和6307，采用浸油润滑，确保传动平稳可靠。
-2025-10-11 19:15:06 - DataFlowLogger - INFO - 开始解析依赖: TASK-DB54C1E7 by 三维建模蜂
-2025-10-11 19:15:06 - DataFlowLogger - DEBUG -   任务输入: {'dependencies': ['TASK-D1AF841A'], 'dependency_names': ['工况分析与参数计算']}
-2025-10-11 19:15:06 - DataFlowLogger - DEBUG -   从task_dag获取的依赖: ['TASK-D1AF841A']
-2025-10-11 19:15:06 - DataFlowLogger - DEBUG -   最终依赖列表: ['TASK-D1AF841A']
-2025-10-11 19:15:06 - DataFlowLogger - DEBUG -   已完成任务: ['TASK-D1AF841A']
-2025-10-11 19:15:06 - DataFlowLogger - DEBUG -   处理依赖任务: TASK-D1AF841A
-2025-10-11 19:15:06 - DataFlowLogger - DEBUG -   找到已完成任务: 工况分析与参数计算, 分配给: 工况分析蜂
-2025-10-11 19:15:06 - DataFlowLogger - DEBUG -   调度蜂存在，注册的工蜂: ['工况分析蜂', '三维建模蜂', '装配蜂']
-2025-10-11 19:15:06 - DataFlowLogger - DEBUG -   检查工蜂: 工况分析蜂
-2025-10-11 19:15:06 - DataFlowLogger - DEBUG -   找到匹配的工蜂: 工况分析蜂
-2025-10-11 19:15:06 - DataFlowLogger - DEBUG -   工蜂有_last_result: <class 'dict'>
-2025-10-11 19:15:06 - DataFlowLogger - INFO -   获取依赖任务结果: 工况分析与参数计算 -> 工况分析蜂
-2025-10-11 19:15:06 - DataFlowLogger - INFO - 依赖解析: TASK-DB54C1E7
-2025-10-11 19:15:06 - DataFlowLogger - DEBUG -   依赖 TASK-D1AF841A: 工况分析与参数计算 by 工况分析蜂
-2025-10-11 19:15:06 - DataFlowLogger - DEBUG -     结果摘要: 基于5kW输入功率、1500rpm输入转速和3:1传动比要求，设计了模数2mm的齿轮传动系统。小齿轮24齿，大齿轮72齿，中心距96mm。小齿轮轴径25mm，大齿轮轴径35mm。系统输出扭矩95.5N·m，输出转速500rpm。建议选用深沟球轴承6205和6307，采用浸油润滑，确保传动平稳可靠。
-2025-10-11 19:15:06 - DataFlowLogger - INFO - API请求: 三维建模蜂 -> https://api.dify.ai/v1/workflows/run
-2025-10-11 19:15:06 - DataFlowLogger - DEBUG -   请求参数: {'inputs': {'design_requirement': '3D建模[工况分析与参数计算: 输入功率:5kW, 输入转速:1500rpm, 传动比:3-, 输出转速:500rpm, 输出扭矩:95.5N·m, 齿轮模数:2mm, 小齿轮齿数:24-, 大齿轮齿数:72-, 中心距:96mm, 小齿轮分度圆直径:48mm, 大齿轮分度圆直径:144mm, 小齿轮轴径:25mm, 大齿轮轴径:35mm]', 'requirements': '', 'task_type': '', 'parameters': {}, 'query': '', 'dependency_results': '{"TASK-D1AF841A": {"task_name": "工况分析与参数计算", "parameters": {"输入功率": "5kW", "输入转速": "1500rpm", "传动比": "3-"}}}'}, 'user': 'bee-mas-system', 'response_mode': 'blocking'}
-2025-10-11 19:15:15 - DataFlowLogger - INFO - API响应: 三维建模蜂
-2025-10-11 19:15:15 - DataFlowLogger - DEBUG -   响应状态: 200
-2025-10-11 19:15:15 - DataFlowLogger - DEBUG -   响应内容: {"task_id": "71cde0ae-af3f-4b36-95cb-f5189661abd5", "workflow_run_id": "69c9ffd6-3a8a-4bcc-b76d-68362298041c", "data": {"id": "69c9ffd6-3a8a-4bcc-b76d-68362298041c", "workflow_id": "0e5fa2fe-d11f-490e...
-2025-10-11 19:15:35 - DataFlowLogger - INFO - 任务分配: TASK-F8F56B5E -> 三维建模蜂
-2025-10-11 19:15:35 - DataFlowLogger - INFO - 开始解析依赖: TASK-F8F56B5E by 三维建模蜂
-2025-10-11 19:15:35 - DataFlowLogger - DEBUG -   任务输入: {'dependencies': ['TASK-DB54C1E7'], 'dependency_names': ['关键部件三维建模']}
-2025-10-11 19:15:35 - DataFlowLogger - DEBUG -   从task_dag获取的依赖: ['TASK-DB54C1E7']
-2025-10-11 19:15:35 - DataFlowLogger - DEBUG -   最终依赖列表: ['TASK-DB54C1E7']
-2025-10-11 19:15:35 - DataFlowLogger - DEBUG -   已完成任务: ['TASK-D1AF841A', 'TASK-DB54C1E7']
-2025-10-11 19:15:35 - DataFlowLogger - DEBUG -   处理依赖任务: TASK-DB54C1E7
-2025-10-11 19:15:35 - DataFlowLogger - DEBUG -   找到已完成任务: 关键部件三维建模, 分配给: 三维建模蜂
-2025-10-11 19:15:35 - DataFlowLogger - DEBUG -   调度蜂存在，注册的工蜂: ['工况分析蜂', '三维建模蜂', '装配蜂']
-2025-10-11 19:15:35 - DataFlowLogger - DEBUG -   检查工蜂: 工况分析蜂
-2025-10-11 19:15:35 - DataFlowLogger - DEBUG -   检查工蜂: 三维建模蜂
-2025-10-11 19:15:35 - DataFlowLogger - DEBUG -   找到匹配的工蜂: 三维建模蜂
-2025-10-11 19:15:35 - DataFlowLogger - DEBUG -   工蜂有_last_result: <class 'dict'>
-2025-10-11 19:15:35 - DataFlowLogger - INFO -   获取依赖任务结果: 关键部件三维建模 -> 三维建模蜂
-2025-10-11 19:15:35 - DataFlowLogger - INFO - 依赖解析: TASK-F8F56B5E
-2025-10-11 19:15:35 - DataFlowLogger - DEBUG -   依赖 TASK-DB54C1E7: 关键部件三维建模 by 三维建模蜂
-2025-10-11 19:15:35 - DataFlowLogger - DEBUG -     结果摘要: 3D建模完成
-2025-10-11 19:15:35 - DataFlowLogger - INFO - 开始解析依赖: TASK-F8F56B5E by 三维建模蜂
-2025-10-11 19:15:35 - DataFlowLogger - DEBUG -   任务输入: {'dependencies': ['TASK-DB54C1E7'], 'dependency_names': ['关键部件三维建模']}
-2025-10-11 19:15:35 - DataFlowLogger - DEBUG -   从task_dag获取的依赖: ['TASK-DB54C1E7']
-2025-10-11 19:15:35 - DataFlowLogger - DEBUG -   最终依赖列表: ['TASK-DB54C1E7']
-2025-10-11 19:15:35 - DataFlowLogger - DEBUG -   已完成任务: ['TASK-D1AF841A', 'TASK-DB54C1E7']
-2025-10-11 19:15:35 - DataFlowLogger - DEBUG -   处理依赖任务: TASK-DB54C1E7
-2025-10-11 19:15:35 - DataFlowLogger - DEBUG -   找到已完成任务: 关键部件三维建模, 分配给: 三维建模蜂
-2025-10-11 19:15:35 - DataFlowLogger - DEBUG -   调度蜂存在，注册的工蜂: ['工况分析蜂', '三维建模蜂', '装配蜂']
-2025-10-11 19:15:35 - DataFlowLogger - DEBUG -   检查工蜂: 工况分析蜂
-2025-10-11 19:15:35 - DataFlowLogger - DEBUG -   检查工蜂: 三维建模蜂
-2025-10-11 19:15:35 - DataFlowLogger - DEBUG -   找到匹配的工蜂: 三维建模蜂
-2025-10-11 19:15:35 - DataFlowLogger - DEBUG -   工蜂有_last_result: <class 'dict'>
-2025-10-11 19:15:35 - DataFlowLogger - INFO -   获取依赖任务结果: 关键部件三维建模 -> 三维建模蜂
-2025-10-11 19:15:35 - DataFlowLogger - INFO - 依赖解析: TASK-F8F56B5E
-2025-10-11 19:15:35 - DataFlowLogger - DEBUG -   依赖 TASK-DB54C1E7: 关键部件三维建模 by 三维建模蜂
-2025-10-11 19:15:35 - DataFlowLogger - DEBUG -     结果摘要: 3D建模完成
-2025-10-11 19:15:35 - DataFlowLogger - INFO - API请求: 三维建模蜂 -> https://api.dify.ai/v1/workflows/run
-2025-10-11 19:15:35 - DataFlowLogger - DEBUG -   请求参数: {'inputs': {'design_requirement': '3D建模', 'requirements': '', 'task_type': '', 'parameters': {}, 'query': '', 'dependency_results': '{}'}, 'user': 'bee-mas-system', 'response_mode': 'blocking'}
-2025-10-11 19:15:42 - DataFlowLogger - INFO - API响应: 三维建模蜂
-2025-10-11 19:15:42 - DataFlowLogger - DEBUG -   响应状态: 200
-2025-10-11 19:15:42 - DataFlowLogger - DEBUG -   响应内容: {"task_id": "bdbc2327-a1de-4d18-bf04-7138926f9ddb", "workflow_run_id": "11a787a0-3964-4662-b056-ee28f5800081", "data": {"id": "11a787a0-3964-4662-b056-ee28f5800081", "workflow_id": "0e5fa2fe-d11f-490e...
-2025-10-11 19:16:04 - DataFlowLogger - INFO - 任务分配: TASK-5DC16566 -> 装配蜂
+2025-10-14 10:55:03 - DataFlowLogger - INFO - 任务创建: 工况分析与参数计算 (TASK-5C8508E4)
+2025-10-14 10:55:03 - DataFlowLogger - DEBUG -   任务描述: 根据输入功率5kW、转速1500rpm和传动比3:1，计算齿轮模数、齿数、轴径、轴承选型等关键参数，确定材料选择和强度校核
+2025-10-14 10:55:03 - DataFlowLogger - DEBUG -   输入参数: {}
+2025-10-14 10:55:03 - DataFlowLogger - INFO - 任务创建: 关键部件三维建模 (TASK-49C03363)
+2025-10-14 10:55:03 - DataFlowLogger - DEBUG -   任务描述: 基于计算参数，分别建立齿轮副、传动轴、轴承等关键部件的3D模型，确保几何尺寸和配合关系正确
+2025-10-14 10:55:03 - DataFlowLogger - DEBUG -   输入参数: {}
+2025-10-14 10:55:03 - DataFlowLogger - INFO - 任务创建: 箱体结构设计与装配 (TASK-52404AB5)
+2025-10-14 10:55:03 - DataFlowLogger - DEBUG -   任务描述: 设计减速机箱体结构，考虑轴承座、润滑系统、密封装置，并将所有部件进行空间定位和装配关系定义
+2025-10-14 10:55:03 - DataFlowLogger - DEBUG -   输入参数: {}
+2025-10-14 10:55:03 - DataFlowLogger - INFO - 任务创建: 关键部件三维建模 (TASK-49C03363)
+2025-10-14 10:55:03 - DataFlowLogger - DEBUG -   任务描述: 基于计算参数，分别建立齿轮副、传动轴、轴承等关键部件的3D模型，确保几何尺寸和配合关系正确
+2025-10-14 10:55:03 - DataFlowLogger - DEBUG -   输入参数: {'dependencies': ['TASK-5C8508E4'], 'dependency_names': ['工况分析与参数计算']}
+2025-10-14 10:55:03 - DataFlowLogger - DEBUG -   依赖任务: ['TASK-5C8508E4']
+2025-10-14 10:55:03 - DataFlowLogger - INFO - 任务创建: 箱体结构设计与装配 (TASK-52404AB5)
+2025-10-14 10:55:03 - DataFlowLogger - DEBUG -   任务描述: 设计减速机箱体结构，考虑轴承座、润滑系统、密封装置，并将所有部件进行空间定位和装配关系定义
+2025-10-14 10:55:03 - DataFlowLogger - DEBUG -   输入参数: {'dependencies': ['TASK-49C03363'], 'dependency_names': ['关键部件三维建模']}
+2025-10-14 10:55:03 - DataFlowLogger - DEBUG -   依赖任务: ['TASK-49C03363']
+2025-10-14 10:57:56 - DataFlowLogger - INFO - 任务分配: TASK-5C8508E4 -> 工况分析蜂
+2025-10-14 10:57:56 - DataFlowLogger - INFO - 任务执行开始: TASK-5C8508E4 by 工况分析蜂
+2025-10-14 10:57:56 - DataFlowLogger - DEBUG -   输入参数: {}
+2025-10-14 10:57:56 - DataFlowLogger - INFO - API请求: 工况分析蜂 -> https://api.dify.ai/v1/workflows/run
+2025-10-14 10:57:56 - DataFlowLogger - DEBUG -   请求参数: {'inputs': {'query': '根据输入功率5kW、转速1500rpm和传动比3:1，计算齿轮模数、齿数、轴径、轴承选型等关键参数，确定材料选择和强度校核'}, 'user': 'bee-mas-system', 'response_mode': 'blocking'}
+2025-10-14 10:58:56 - DataFlowLogger - ERROR - 错误: 工况分析蜂 - HTTPSConnectionPool(host='api.dify.ai', port=443): Max retries exceeded with url: /v1/workflows/run (Caused by ProxyError('Unable to connect to proxy', RemoteDisconnected('Remote end closed connection without response')))
+2025-10-14 10:58:56 - DataFlowLogger - ERROR - 错误: 工况分析蜂 - HTTPSConnectionPool(host='api.dify.ai', port=443): Max retries exceeded with url: /v1/workflows/run (Caused by ProxyError('Unable to connect to proxy', RemoteDisconnected('Remote end closed connection without response')))
+2025-10-14 10:59:14 - DataFlowLogger - INFO - 任务分配: TASK-49C03363 -> 三维建模蜂
+2025-10-14 10:59:14 - DataFlowLogger - INFO - 开始解析依赖: TASK-49C03363 by 三维建模蜂
+2025-10-14 10:59:14 - DataFlowLogger - DEBUG -   任务输入: {'dependencies': ['TASK-5C8508E4'], 'dependency_names': ['工况分析与参数计算']}
+2025-10-14 10:59:14 - DataFlowLogger - DEBUG -   从task_dag获取的依赖: ['TASK-5C8508E4']
+2025-10-14 10:59:14 - DataFlowLogger - DEBUG -   最终依赖列表: ['TASK-5C8508E4']
+2025-10-14 10:59:14 - DataFlowLogger - DEBUG -   已完成任务: []
+2025-10-14 10:59:14 - DataFlowLogger - DEBUG -   处理依赖任务: TASK-5C8508E4
+2025-10-14 10:59:14 - DataFlowLogger - WARNING -   依赖任务未完成或不存在: TASK-5C8508E4
+2025-10-14 10:59:14 - DataFlowLogger - INFO - 依赖解析: TASK-49C03363
+2025-10-14 10:59:14 - DataFlowLogger - WARNING -   未找到依赖任务结果
+2025-10-14 10:59:14 - DataFlowLogger - INFO - 开始解析依赖: TASK-49C03363 by 三维建模蜂
+2025-10-14 10:59:14 - DataFlowLogger - DEBUG -   任务输入: {'dependencies': ['TASK-5C8508E4'], 'dependency_names': ['工况分析与参数计算']}
+2025-10-14 10:59:14 - DataFlowLogger - DEBUG -   从task_dag获取的依赖: ['TASK-5C8508E4']
+2025-10-14 10:59:14 - DataFlowLogger - DEBUG -   最终依赖列表: ['TASK-5C8508E4']
+2025-10-14 10:59:14 - DataFlowLogger - DEBUG -   已完成任务: []
+2025-10-14 10:59:14 - DataFlowLogger - DEBUG -   处理依赖任务: TASK-5C8508E4
+2025-10-14 10:59:14 - DataFlowLogger - WARNING -   依赖任务未完成或不存在: TASK-5C8508E4
+2025-10-14 10:59:14 - DataFlowLogger - INFO - 依赖解析: TASK-49C03363
+2025-10-14 10:59:14 - DataFlowLogger - WARNING -   未找到依赖任务结果
+2025-10-14 10:59:14 - DataFlowLogger - INFO - API请求: 三维建模蜂 -> https://api.dify.ai/v1/workflows/run
+2025-10-14 10:59:14 - DataFlowLogger - DEBUG -   请求参数: {'inputs': {'design_requirement': '3D建模', 'requirements': '', 'task_type': '', 'parameters': {}, 'query': ''}, 'user': 'bee-mas-system', 'response_mode': 'blocking'}
+2025-10-14 10:59:47 - DataFlowLogger - INFO - API响应: 三维建模蜂
+2025-10-14 10:59:47 - DataFlowLogger - DEBUG -   响应状态: 200
+2025-10-14 10:59:47 - DataFlowLogger - DEBUG -   响应内容: {"task_id": "70b48f8f-e357-4b8a-909c-2f675b587280", "workflow_run_id": "74dfe6a5-e216-482f-baea-08151040c2d9", "data": {"id": "74dfe6a5-e216-482f-baea-08151040c2d9", "workflow_id": "0e5fa2fe-d11f-490e...
+2025-10-14 11:00:10 - DataFlowLogger - INFO - 任务分配: TASK-52404AB5 -> 装配蜂
+2025-10-14 11:00:10 - DataFlowLogger - INFO - 开始解析依赖: TASK-52404AB5 by 装配蜂
+2025-10-14 11:00:10 - DataFlowLogger - DEBUG -   任务输入: {'dependencies': ['TASK-49C03363'], 'dependency_names': ['关键部件三维建模']}
+2025-10-14 11:00:10 - DataFlowLogger - DEBUG -   从task_dag获取的依赖: ['TASK-49C03363']
+2025-10-14 11:00:10 - DataFlowLogger - DEBUG -   最终依赖列表: ['TASK-49C03363']
+2025-10-14 11:00:10 - DataFlowLogger - DEBUG -   已完成任务: ['TASK-49C03363']
+2025-10-14 11:00:10 - DataFlowLogger - DEBUG -   处理依赖任务: TASK-49C03363
+2025-10-14 11:00:10 - DataFlowLogger - DEBUG -   找到已完成任务: 关键部件三维建模, 分配给: 三维建模蜂
+2025-10-14 11:00:10 - DataFlowLogger - DEBUG -   调度蜂存在，注册的工蜂: ['工况分析蜂', '三维建模蜂', '装配蜂']
+2025-10-14 11:00:10 - DataFlowLogger - DEBUG -   检查工蜂: 工况分析蜂
+2025-10-14 11:00:10 - DataFlowLogger - DEBUG -   检查工蜂: 三维建模蜂
+2025-10-14 11:00:10 - DataFlowLogger - DEBUG -   找到匹配的工蜂: 三维建模蜂
+2025-10-14 11:00:10 - DataFlowLogger - DEBUG -   工蜂有_last_result: <class 'dict'>
+2025-10-14 11:00:10 - DataFlowLogger - INFO -   获取依赖任务结果: 关键部件三维建模 -> 三维建模蜂
+2025-10-14 11:00:10 - DataFlowLogger - INFO - 依赖解析: TASK-52404AB5
+2025-10-14 11:00:10 - DataFlowLogger - DEBUG -   依赖 TASK-49C03363: 关键部件三维建模 by 三维建模蜂
+2025-10-14 11:00:10 - DataFlowLogger - DEBUG -     结果摘要: 3D建模完成
+2025-10-14 11:00:10 - DataFlowLogger - INFO - 开始解析依赖: TASK-52404AB5 by 装配蜂
+2025-10-14 11:00:10 - DataFlowLogger - DEBUG -   任务输入: {'dependencies': ['TASK-49C03363'], 'dependency_names': ['关键部件三维建模']}
+2025-10-14 11:00:10 - DataFlowLogger - DEBUG -   从task_dag获取的依赖: ['TASK-49C03363']
+2025-10-14 11:00:10 - DataFlowLogger - DEBUG -   最终依赖列表: ['TASK-49C03363']
+2025-10-14 11:00:10 - DataFlowLogger - DEBUG -   已完成任务: ['TASK-49C03363']
+2025-10-14 11:00:10 - DataFlowLogger - DEBUG -   处理依赖任务: TASK-49C03363
+2025-10-14 11:00:10 - DataFlowLogger - DEBUG -   找到已完成任务: 关键部件三维建模, 分配给: 三维建模蜂
+2025-10-14 11:00:10 - DataFlowLogger - DEBUG -   调度蜂存在，注册的工蜂: ['工况分析蜂', '三维建模蜂', '装配蜂']
+2025-10-14 11:00:10 - DataFlowLogger - DEBUG -   检查工蜂: 工况分析蜂
+2025-10-14 11:00:10 - DataFlowLogger - DEBUG -   检查工蜂: 三维建模蜂
+2025-10-14 11:00:10 - DataFlowLogger - DEBUG -   找到匹配的工蜂: 三维建模蜂
+2025-10-14 11:00:10 - DataFlowLogger - DEBUG -   工蜂有_last_result: <class 'dict'>
+2025-10-14 11:00:10 - DataFlowLogger - INFO -   获取依赖任务结果: 关键部件三维建模 -> 三维建模蜂
+2025-10-14 11:00:10 - DataFlowLogger - INFO - 依赖解析: TASK-52404AB5
+2025-10-14 11:00:10 - DataFlowLogger - DEBUG -   依赖 TASK-49C03363: 关键部件三维建模 by 三维建模蜂
+2025-10-14 11:00:10 - DataFlowLogger - DEBUG -     结果摘要: 3D建模完成
+2025-10-14 11:00:10 - DataFlowLogger - INFO - API请求: 装配蜂 -> https://api.dify.ai/v1/chat-messages
+2025-10-14 11:00:10 - DataFlowLogger - DEBUG -   请求参数: {'inputs': {'assembly_requirement': '装配设计', 'requirements': '', 'task_type': '', 'parameters': {}, 'query': '', 'dependency_results': '{}'}, 'query': '装配设计', 'user': 'bee-mas-system'}
+2025-10-14 11:01:11 - DataFlowLogger - ERROR - 错误: 装配蜂 - HTTPSConnectionPool(host='api.dify.ai', port=443): Max retries exceeded with url: /v1/chat-messages (Caused by ProxyError('Unable to connect to proxy', RemoteDisconnected('Remote end closed connection without response')))
