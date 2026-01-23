@@ -1,67 +1,72 @@
+IGD Framework Implementation
 
-# IGD Framework Implementation
+Implementation of a Semantic-Driven End-to-End Intelligent Mechanical Design
 
-实现语义驱动的端到端智能机械设计
+🐝 System Overview
 
-## 🐝 系统概述
+Engineering implementation of the IGD (Intelligent Generative Design) framework, a unified semantic-driven generative design framework. The system adopts an Ant-Colony inspired ACBAC (Ant-Colony Bionic Agent Collaboration) multi-agent collaboration mechanism, achieving full-process automation from natural language requirements to the design, modeling, and assembly of complex mechanical products.
 
- IGD (Intelligent Generative Design) 框架的工程实现，这是一个基于语义驱动的统一生成式设计框架。系统采用受蚁群启发的 ACBAC (Ant-Colony Bionic Agent Collaboration) 多智能体协作机制，实现了从自然语言需求到复杂机械产品设计、建模与装配的全流程自动化。
+By integrating General Large Language Models (LLMs), Supervised Fine-Tuned Models (SFT LLMs), and specialized Task Neural Networks (TNNs), the IGD framework is capable of performing semantic-driven functional analysis, high-precision 3D modeling, assembly constraint reasoning, and kinematic analysis.
 
-通过集成通用大模型 (LLM)、监督微调模型 (SFT LLM) 以及特定的任务神经网络 (TNN)，IGD 框架能够完成语义驱动的功能分析、高精度 3D 建模、装配约束推理及运动学分析。
+🏗️ System Architecture
 
-## 🏗️ 系统架构
+The IGD framework employs a layered architecture, consisting of the Environment Layer and the Functional Layer, achieving decentralized self-organizing collaboration through a global Pheromone Field.
 
-IGD 框架采用分层架构，包含 Environment Layer（环境层） 和 Functional Layer（功能层），通过全局 Pheromone Field（信息素场） 实现去中心化的自组织协作。
+Core Components
 
-### 核心组件
+Environment Layer
 
-#### Environment Layer (环境层)
+• TP Agent (Task Planning Agent)
 
-- **TP Agent (Task Planning Agent / 任务规划智能体)** 
-  - **职责**：负责解析用户自然语言需求，利用向量数据库检索专家知识，将设计意图分解为可执行的任务列表（如零件设计、3D建模、装配等）。
-  - **核心机制**：使用 ACBAC 机制调度任务，维护全局信息素场，协调下层 Agent 的协作。
+  • Responsibilities: Parses user natural language requirements, retrieves expert knowledge using a vector database, and decomposes design intent into an executable task list (e.g., part design, 3D modeling, assembly).
 
-#### Functional Layer (功能层)
+  • Core Mechanism: Uses the ACBAC mechanism for task scheduling, maintains the global pheromone field, and coordinates collaboration among lower-level Agents.
 
-- **PD Agent (Part Design Agent / 零件设计智能体)** 
-  - **职责**：专业的需求分析和参数计算，基于设计需求进行专家级的设计分析。
-  - **技术支撑**：利用 MKG (Multimodal design Knowledge Graph) 进行检索增强生成 (RAG)，结合 Dify API 工作流及通用 LLM 进行结构化分析。
+Functional Layer
 
-- **PM Agent (Part Modeling Agent / 零件建模智能体)** 
-  - **职责**：生成高精度的 3D 零件模型及建模脚本（OpenSCAD/CADQuery）。
-  - **技术支撑**：采用混合提示策略，包括 CRP (Content-Retrieval Prompting) 基于检索的建模和 CGP (Content-Generation Prompting) 基于 SFT 模型的生成式建模。引入 Checker LLM 进行迭代修正。
+• PD Agent (Part Design Agent)
 
-- **PA Agent (Part Assembly Agent / 零件装配智能体)** 
-  - **职责**：装配设计和空间定位，将 3D 零件模型在特定空间位置进行机械装配。
-  - **技术支撑**：采用 GART (Graph-based Assembly Relation Transfer) 方法，通过图网络提取几何特征并检索历史装配模式，指导 LLM 生成符合物理约束的装配指令。
+  • Responsibilities: Specialized requirement analysis and parameter calculation, performing expert-level design analysis based on design requirements.
 
-### 工作流程 (基于 ACBAC 机制)
+  • Technical Support: Utilizes MKG (Multimodal design Knowledge Graph) for Retrieval-Augmented Generation (RAG), combined with Dify API workflows and General LLMs for structured analysis.
 
-1. **任务分解** - TP Agent 使用 DeepSeek API 解析自然语言需求，生成任务包和提案信息素 (PP) 信号。
-2. **任务发布** - 发布到全局信息素场。
-3. **智能竞标** - 功能层 Agent (PD, PM, PA) 基于自身能力（历史成功率、置信度等）提交提案。
-4. **任务分配** - 基于信息素浓度和评分机制，TP Agent 将任务智能分配给最合适的 Agent。
-5. **任务执行** - Agent 执行分配到的任务，调用相应的 Dify API (PD, PM, PA)。
-6. **结果收集与反馈** - 收集任务结果并反馈至信息素场，强化成功路径。
+• PM Agent (Part Modeling Agent)
 
-## 🚀 快速开始
+  • Responsibilities: Generates high-precision 3D part models and modeling scripts (OpenSCAD/CADQuery).
 
-### 环境配置
+  • Technical Support: Employs hybrid prompting strategies, including CRP (Content-Retrieval Prompting) for retrieval-based modeling and CGP (Content-Generation Prompting) for generation-based modeling using SFT models. Introduces a Checker LLM for iterative correction.
 
-#### 安装依赖
+• PA Agent (Part Assembly Agent)
 
-```bash
+  • Responsibilities: Assembly design and spatial positioning, performing mechanical assembly of 3D part models in specific spatial locations.
+
+  • Technical Support: Uses the GART (Graph-based Assembly Relation Transfer) method, extracting geometric features via graph networks and retrieving historical assembly patterns to guide the LLM in generating assembly instructions that adhere to physical constraints.
+
+Workflow (Based on the ACBAC Mechanism)
+
+1. Task Decomposition - TP Agent uses the DeepSeek API to parse natural language requirements, generating task packages and Proposal Pheromone (PP) signals.
+2. Task Publishing - Tasks are published to the global pheromone field.
+3. Agent Bidding - Functional layer Agents (PD, PM, PA) submit proposals based on their capabilities (historical success rate, confidence, etc.).
+4. Task Assignment - Based on pheromone concentration and a scoring mechanism, the TP Agent intelligently assigns tasks to the most suitable Agent.
+5. Task Execution - The Agent executes the assigned task by calling the corresponding Dify API (PD, PM, PA).
+6. Result Collection & Feedback - Task results are collected and fed back into the pheromone field, reinforcing successful paths.
+
+🚀 Quick Start
+
+Environment Configuration
+
+Install Dependencies
+
 pip install -r requirements.txt
-```
 
-#### 配置环境变量
 
-```bash
-# 复制环境变量模板
+Configure Environment Variables
+
+# Copy the environment variable template
 cp .env.example .env
 
-# 编辑 .env 文件，填入你的 API 密钥
-# 对应论文中的 General LLM (如 DeepSeek) 及各 Agent 工作流接口
+# Edit the .env file, fill in your API keys
+# Corresponding to the General LLM (e.g., DeepSeek) and Agent workflow interfaces mentioned in the paper
 # DEEPSEEK_API_KEY=your_deepseek_api_key
 # DIFY_PARAMETER_API_URL=your_dify_parameter_api_url
 # DIFY_PARAMETER_API_KEY=your_dify_parameter_api_key
@@ -69,125 +74,136 @@ cp .env.example .env
 # DIFY_MODELING_API_KEY=your_dify_modeling_api_key
 # DIFY_ASSEMBLY_API_URL=your_dify_assembly_api_url
 # DIFY_ASSEMBLY_API_KEY=your_dify_assembly_api_key
-```
 
-### 运行主程序
 
-```bash
+Run the Main Program
+
 cd bee_mas
 python main.py
-```
 
-### 运行测试
 
-```bash
-# 测试 PD Agent (参数分析/设计分析)
+Run Tests
+
+# Test PD Agent (Parameter Analysis/Design Analysis)
 python test_parameter_analysis_dify.py
 
-# 测试 PM Agent (三维建模 - CRP/CGP)
+# Test PM Agent (3D Modeling - CRP/CGP)
 python test_modeling_dify.py
-```
 
-## 🔧 功能特性
 
-### PD Agent - 语义驱动的设计分析
+🔧 Features
 
-PD Agent 是系统的核心分析组件，基于多模态知识图谱 (MKG) 和 Dify API 工作流实现：
+PD Agent - Semantic-Driven Design Analysis
 
-- **需求解析**：将自然语言需求转化为结构化设计参数和几何描述。
-- **知识推理**：利用向量数据库检索历史设计知识，辅助 LLM 进行工程可行性分析。
-- **参数计算**：生成精确的工程参数（如模数、齿数、压力角等）。
-- **设计建议**：提供基于专家知识库的设计改进建议。
+PD Agent is the core analytical component of the system, implemented based on the Multimodal Knowledge Graph (MKG) and Dify API workflows:
 
-#### 示例输出
+• Requirement Parsing: Transforms natural language requirements into structured design parameters and geometric descriptions.
 
-```json
+• Knowledge Reasoning: Uses vector database retrieval of historical design knowledge to assist LLMs in engineering feasibility analysis.
+
+• Parameter Calculation: Generates precise engineering parameters (e.g., modulus, number of teeth, pressure angle).
+
+• Design Recommendations: Provides design improvement suggestions based on an expert knowledge base.
+
+Example Output
+
 {
   "parameters": {
-    "模数": 2.0,
-    "齿数": 20,
-    "压力角": 20,
-    "齿宽": 10,
-    "孔径": 15
+    "modulus": 2.0,
+    "number_of_teeth": 20,
+    "pressure_angle": 20,
+    "face_width": 10,
+    "bore_diameter": 15
   },
   "units": {
-    "长度": "mm",
-    "角度": "度"
+    "length": "mm",
+    "angle": "degrees"
   },
   "constraints": [
-    "使用标准规格",
-    "考虑制造可行性"
+    "Use standard specifications",
+    "Consider manufacturability"
   ],
   "recommendations": [
-    "建议进行详细设计验证"
+    "Perform detailed design validation"
   ]
 }
-```
 
-### PM Agent - 混合提示 3D 建模
 
-PM Agent 基于 Dify API 工作流实现，结合了 CRP 和 CGP 两种策略：
+PM Agent - Hybrid Prompting 3D Modeling
 
-- **CRP (Content-Retrieval Prompting)**：基于零件名称检索相似 3D 模型库，利用检索结果作为 Prompt 引导 LLM 生成高精度模型。
-- **CGP (Content-Generation Prompting)**：基于 SFT LLM 将几何/功能描述转化为初始建模代码，再由通用 LLM 进行细化。
-- **双 LLM 迭代优化**：引入 Checker LLM 对生成的建模脚本（如 OpenSCAD/CADQuery）进行几何准确性检查和修正。
-- **参数化设计**：支持参数化模型修改与代码生成。
+PM Agent is implemented based on Dify API workflows, combining CRP and CGP strategies:
 
-### PA Agent - 基于图传递的装配设计
+• CRP (Content-Retrieval Prompting): Retrieves similar 3D model libraries based on part names, using the retrieved results as prompts to guide the LLM in generating high-precision models.
 
-PA Agent 基于 Dify API 工作流实现，利用 GART 方法解决 LLM 空间推理能力不足的问题：
+• CGP (Content-Generation Prompting): Uses SFT LLMs to convert geometric/functional descriptions into initial modeling code, which is then refined by a General LLM.
 
-- **装配关系识别**：提取零件几何特征、基准要素和功能语义。
-- **装配模式检索**：在向量数据库中检索具有相似拓扑结构和配合关系的历史子图。
-- **装配图构建**：利用检索到的成熟装配模式作为 Prompt，指导 LLM 推断配合约束、空间位置和运动副类型。
-- **干涉检查与运动学推理**：生成装配指令，确保装配体在运动过程中保持几何一致性。
+• Dual LLM Iterative Optimization: Introduces a Checker LLM to perform geometric accuracy checks and corrections on generated modeling scripts (e.g., OpenSCAD/CADQuery).
 
-### 智能任务调度 (ACBAC)
+• Parametric Design: Supports parametric model modifications and code generation.
 
-- **信息素场调度**：基于全局信息素浓度动态调整任务优先级。
-- **负载均衡**：根据 Agent 的能力匹配度、历史成功率和置信度进行智能分配。
-- **自适应优化**：通过反馈机制自动强化高效路径，抑制失败路径。
+PA Agent - Graph-based Assembly Design
 
-## 📊 系统状态监控
+PA Agent is implemented based on Dify API workflows, utilizing the GART method to address LLM shortcomings in spatial reasoning:
 
-系统提供实时的状态监控功能，对应 IGD 框架的执行反馈：
+• Assembly Relation Recognition: Extracts part geometric features, datum elements, and functional semantics.
 
-- 任务分配状态与信息素浓度
-- 执行进度跟踪
-- Agent 工作负载与 Token 消耗
-- 系统性能指标
-- 设计迭代日志记录
+• Assembly Pattern Retrieval: Retrieves historical subgraphs with similar topological structures and mating relationships from a vector database.
 
-## 📁 项目结构
+• Assembly Graph Construction: Uses retrieved mature assembly patterns as prompts to guide the LLM in inferring mating constraints, spatial positions, and joint types.
 
-```
+• Interference Checking & Kinematic Reasoning: Generates assembly instructions ensuring geometric consistency during motion.
+
+Intelligent Task Scheduling (ACBAC)
+
+• Pheromone Field Scheduling: Dynamically adjusts task priority based on global pheromone concentration.
+
+• Load Balancing: Intelligently assigns tasks based on Agent capability matching, historical success rate, and confidence.
+
+• Adaptive Optimization: Automatically reinforces efficient paths and suppresses failure paths through feedback mechanisms.
+
+📊 System Status Monitoring
+
+The system provides real-time status monitoring, corresponding to the execution feedback of the IGD framework:
+
+• Task assignment status and pheromone concentration
+
+• Execution progress tracking
+
+• Agent workload and Token consumption
+
+• System performance metrics
+
+• Design iteration log recording
+
+📁 Project Structure
+
+
 bee_mas/
-├── main.py                           # 主程序入口
-├── requirements.txt                  # 依赖包列表
-├── README.md                         # 项目说明文档
-├── .env.example                      # 环境变量配置模板
-├── agents/                           # 智能体模块
+├── main.py                           # Main program entry point
+├── requirements.txt                  # Dependency list
+├── README.md                         # Project documentation
+├── .env.example                      # Environment variable configuration template
+├── agents/                           # Agent modules
 │   ├── __init__.py
-│   ├── tp_agent.py                   # TP Agent (任务规划/原调度蜂)
-│   ├── pd_agent.py                   # PD Agent (零件设计/原工况分析蜂)
-│   ├── pm_agent.py                   # PM Agent (零件建模/原三维建模蜂)
-│   └── pa_agent.py                   # PA Agent (零件装配/原装配蜂)
-├── test_parameter_analysis_dify.py   # PD Agent 测试
-├── test_modeling_dify.py             # PM Agent 测试
-└── outputs/                          # 输出文件目录
-```
+│   ├── tp_agent.py                   # TP Agent (Task Planning)
+│   ├── pd_agent.py                   # PD Agent (Part Design)
+│   ├── pm_agent.py                   # PM Agent (Part Modeling)
+│   └── pa_agent.py                   # PA Agent (Part Assembly)
+├── test_parameter_analysis_dify.py   # PD Agent test
+├── test_modeling_dify.py             # PM Agent test
+└── outputs/                          # Output directory
 
-## 🤝 贡献指南
 
-欢迎贡献代码和想法！请遵循以下步骤：
+🤝 Contribution Guidelines
 
-1. Fork 项目
-2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 创建 Pull Request
+Contributions of code and ideas are welcome! Please follow these steps:
 
-## 📄 许可证
+1. Fork the project
+2. Create a feature branch (git checkout -b feature/AmazingFeature)
+3. Commit your changes (git commit -m 'Add some AmazingFeature')
+4. Push to the branch (git push origin feature/AmazingFeature)
+5. Open a Pull Request
 
-本项目采用 MIT 许可证 - 查看 LICENSE 文件了解详情。
-```
+📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
